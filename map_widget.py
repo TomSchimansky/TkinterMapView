@@ -125,7 +125,7 @@ class CTkMapWidget(tkinter.Frame):
         self.after(10, self.update_canvas_tile_images)
         self.image_load_thread_pool = []
 
-        for i in range(10):  # add 10 background threads which load tile images from self.image_load_queue_tasks
+        for i in range(1):  # add 10 background threads which load tile images from self.image_load_queue_tasks
             image_load_thread = threading.Thread(daemon=True, target=self.load_images_background)
             image_load_thread.start()
             self.image_load_thread_pool.append(image_load_thread)
@@ -136,7 +136,7 @@ class CTkMapWidget(tkinter.Frame):
         self.set_zoom(17)
 
     def set_position(self, deg_x, deg_y):
-        # convert given decimal coordinates to OSM coordinates and set corner position accordingly
+        # convert given decimal coordinates to OSM coordinates and set corner positions accordingly
         current_tile_position = deg2num(deg_x, deg_y, self.zoom)
         self.upper_left_tile_pos = (current_tile_position[0] - ((self.width / 2) / self.tile_size),
                                     current_tile_position[1] - ((self.height / 2) / self.tile_size))
@@ -144,7 +144,8 @@ class CTkMapWidget(tkinter.Frame):
         self.lower_right_tile_pos = (current_tile_position[0] + ((self.width / 2) / self.tile_size),
                                      current_tile_position[1] + ((self.height / 2) / self.tile_size))
 
-        self.draw_move()
+        self.draw_initial_array()
+        # self.draw_move()  # move can only handle position changes that big, so that the old and new view overlap
 
     def pre_cache(self):
 
@@ -188,6 +189,7 @@ class CTkMapWidget(tkinter.Frame):
     def request_image(self, zoom, x, y):
         # request image from internet, does not check if its in cache
         try:
+            print(zoom, x, y)
             image = Image.open(requests.get(f"https://a.tile.openstreetmap.org/{zoom}/{x}/{y}.png", stream=True).raw)
             image_tk = ImageTk.PhotoImage(image)
             self.tile_image_cache[f"{zoom}{x}{y}"] = image_tk
@@ -312,6 +314,8 @@ class CTkMapWidget(tkinter.Frame):
 
         if self.canvas_tile_array:
 
+            print(len(self.canvas_tile_array), len(self.canvas_tile_array[0]))
+
             for x_pos in range(len(self.canvas_tile_array)):
                 for y_pos in range(len(self.canvas_tile_array[0])):
                     self.canvas_tile_array[x_pos][y_pos].draw()
@@ -325,6 +329,7 @@ class CTkMapWidget(tkinter.Frame):
             elif top_y_diff >= 1:
                 for y_diff in range(1, math.ceil(top_y_diff)):
                     for x in range(len(self.canvas_tile_array)):
+                        print(x)
                         del self.canvas_tile_array[x][0]
 
             # insert or delete columns on left

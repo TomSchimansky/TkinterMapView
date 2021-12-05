@@ -38,6 +38,9 @@ class App(tkinter.Tk):
         self.map_widget = CTkMapWidget(width=self.WIDTH, height=self.HEIGHT)
         self.map_widget.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
 
+        # self.map_widget.set_zoom(16)
+        # self.map_widget.set_position(53.543135, 9.980685)
+
     def about_dialog(self):
         tkinter.messagebox.showinfo(title=self.APP_NAME,
                                     message=self.ABOUT_TEXT)
