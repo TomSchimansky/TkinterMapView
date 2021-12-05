@@ -125,7 +125,7 @@ class CTkMapWidget(tkinter.Frame):
         self.after(10, self.update_canvas_tile_images)
         self.image_load_thread_pool = []
 
-        for i in range(1):  # add 10 background threads which load tile images from self.image_load_queue_tasks
+        for i in range(10):  # add 10 background threads which load tile images from self.image_load_queue_tasks
             image_load_thread = threading.Thread(daemon=True, target=self.load_images_background)
             image_load_thread.start()
             self.image_load_thread_pool.append(image_load_thread)
@@ -189,7 +189,6 @@ class CTkMapWidget(tkinter.Frame):
     def request_image(self, zoom, x, y):
         # request image from internet, does not check if its in cache
         try:
-            print(zoom, x, y)
             image = Image.open(requests.get(f"https://a.tile.openstreetmap.org/{zoom}/{x}/{y}.png", stream=True).raw)
             image_tk = ImageTk.PhotoImage(image)
             self.tile_image_cache[f"{zoom}{x}{y}"] = image_tk
@@ -313,8 +312,6 @@ class CTkMapWidget(tkinter.Frame):
     def draw_move(self):
 
         if self.canvas_tile_array:
-
-            print(len(self.canvas_tile_array), len(self.canvas_tile_array[0]))
 
             for x_pos in range(len(self.canvas_tile_array)):
                 for y_pos in range(len(self.canvas_tile_array[0])):
