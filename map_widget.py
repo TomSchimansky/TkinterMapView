@@ -111,8 +111,11 @@ class CTkMapWidget(tkinter.Frame):
 
         self.tile_image_cache = {}
         self.canvas_tile_array = []
-        self.empty_tile_image = ImageTk.PhotoImage(Image.new("RGB", (256, 256), (190, 0, 0)))
+        self.empty_tile_image = ImageTk.PhotoImage(Image.new("RGB", (256, 256), (190, 190, 190)))
         self.not_loaded_tile_image = ImageTk.PhotoImage(Image.new("RGB", (256, 256), (250, 250, 250)))
+        self.tile_server = "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        self.overlay_tile_server = None
+        self.max_zoom = 19
 
         # pre caching for smoother movements (load tile images into cache at a certain radius around the pre_cache_position)
         self.pre_cache_position = None
@@ -134,6 +137,15 @@ class CTkMapWidget(tkinter.Frame):
         self.set_position(52.516268, 13.377695)
         self.draw_initial_array()
         self.set_zoom(17)
+
+    def set_overlay_tile_server(self, overlay_server):
+        self.overlay_tile_server = overlay_server
+
+    def set_tile_server(self, tile_server, tile_size=256, max_zoom=19):
+        self.max_zoom = max_zoom
+        self.tile_size = tile_size
+        self.tile_server = tile_server
+        self.draw_initial_array()
 
     def set_position(self, deg_x, deg_y):
         # convert given decimal coordinates to OSM coordinates and set corner positions accordingly
@@ -189,10 +201,25 @@ class CTkMapWidget(tkinter.Frame):
     def request_image(self, zoom, x, y):
         # request image from internet, does not check if its in cache
         try:
-            image = Image.open(requests.get(f"https://a.tile.openstreetmap.org/{zoom}/{x}/{y}.png", stream=True).raw)
+            url = self.tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
+            image = Image.open(requests.get(url, stream=True).raw)
+
+            if self.overlay_tile_server is not None:
+                url = self.overlay_tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
+                image_overlay = Image.open(requests.get(url, stream=True).raw)
+                image = image.convert("RGBA")
+                image_overlay = image_overlay.convert("RGBA")
+
+                if image_overlay.size is not (self.tile_size, self.tile_size):
+                    image_overlay = image_overlay.resize((self.tile_size, self.tile_size), Image.ANTIALIAS)
+
+                image.paste(image_overlay, (0, 0), image_overlay)
+
             image_tk = ImageTk.PhotoImage(image)
+
             self.tile_image_cache[f"{zoom}{x}{y}"] = image_tk
             return image_tk
+
         except PIL.UnidentifiedImageError:
             self.tile_image_cache[f"{zoom}{x}{y}"] = self.empty_tile_image
             return self.empty_tile_image
@@ -326,7 +353,6 @@ class CTkMapWidget(tkinter.Frame):
             elif top_y_diff >= 1:
                 for y_diff in range(1, math.ceil(top_y_diff)):
                     for x in range(len(self.canvas_tile_array)):
-                        print(x)
                         del self.canvas_tile_array[x][0]
 
             # insert or delete columns on left
@@ -426,8 +452,8 @@ class CTkMapWidget(tkinter.Frame):
 
         self.zoom = zoom
 
-        if self.zoom > 19:
-            self.zoom = 19
+        if self.zoom > self.max_zoom:
+            self.zoom = self.max_zoom
         if self.zoom < 0:
             self.zoom = 0
 

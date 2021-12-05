@@ -8,7 +8,8 @@ MAIN_PATH = os.path.dirname(__file__)
 
 
 class App(tkinter.Tk):
-    APP_NAME = "OSM map widget"
+
+    APP_NAME = "Tkinter map widget"
     ABOUT_TEXT = ""
     WIDTH = 800
     HEIGHT = 600
@@ -38,8 +39,18 @@ class App(tkinter.Tk):
         self.map_widget = CTkMapWidget(width=self.WIDTH, height=self.HEIGHT)
         self.map_widget.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
 
-        # self.map_widget.set_zoom(16)
-        # self.map_widget.set_position(53.543135, 9.980685)
+        self.map_widget.set_tile_server("https://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}&s=Ga")  # google normal
+        # self.map_widget.set_tile_server("https://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}&s=Ga")  # google satellite
+        # self.map_widget.set_tile_server("http://c.tile.stamen.com/watercolor/{z}/{x}/{y}.png")  # painting style
+        # self.map_widget.set_tile_server("http://a.tile.stamen.com/toner/{z}/{x}/{y}.png")  # black and white
+        # self.map_widget.set_tile_server("https://tiles.wmflabs.org/hikebike/{z}/{x}/{y}.png")  # detailed hiking
+        # self.map_widget.set_tile_server("https://tiles.wmflabs.org/osm-no-labels/{z}/{x}/{y}.png")  # no labels
+
+        # self.map_widget.set_overlay_tile_server("http://tiles.openseamap.org/seamark//{z}/{x}/{y}.png")  # sea-map overlay
+        # self.map_widget.set_overlay_tile_server("http://a.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png")  # railway infrastructure
+
+        self.map_widget.set_zoom(16)
+        self.map_widget.set_position(53.543135, 9.980685)  # Hamburg
 
     def about_dialog(self):
         tkinter.messagebox.showinfo(title=self.APP_NAME,
