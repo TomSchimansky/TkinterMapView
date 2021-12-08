@@ -68,15 +68,20 @@ class CanvasTile:
         canvas_pos_x, canvas_pos_y = self.get_canvas_pos()
 
         if self.canvas_object is None:
-            self.canvas_object = self.map_widget.canvas.create_image(canvas_pos_x,
-                                                                     canvas_pos_y,
-                                                                     image=self.image,
-                                                                     anchor=tkinter.NW)
+            if not (self.image == self.map_widget.not_loaded_tile_image or self.image == self.image == self.map_widget.empty_tile_image):
+                self.canvas_object = self.map_widget.canvas.create_image(canvas_pos_x,
+                                                                         canvas_pos_y,
+                                                                         image=self.image,
+                                                                         anchor=tkinter.NW)
         else:
             self.map_widget.canvas.coords(self.canvas_object, canvas_pos_x, canvas_pos_y)
 
             if image_update:
-                self.map_widget.canvas.itemconfig(self.canvas_object, image=self.image)
+                if not (self.image == self.map_widget.not_loaded_tile_image or self.image == self.image == self.map_widget.empty_tile_image):
+                    self.map_widget.canvas.itemconfig(self.canvas_object, image=self.image)
+                else:
+                    self.map_widget.canvas.delete(self.canvas_object)
+                    self.canvas_object = None
 
 
 class CTkMapWidget(tkinter.Frame):
@@ -92,7 +97,7 @@ class CTkMapWidget(tkinter.Frame):
 
         self.canvas = tkinter.Canvas(master=self,
                                      highlightthicknes=0,
-                                     bg="gray40",
+                                     bg="#F1EFEA",
                                      width=self.width,
                                      height=self.height)
         self.canvas.place(x=0, y=0)
@@ -100,8 +105,15 @@ class CTkMapWidget(tkinter.Frame):
         # bind events for mouse button pressed, mouse movement, and scrolling
         self.canvas.bind("<B1-Motion>", self.mousemove)
         self.canvas.bind("<Button-1>", self.mouseclick)
+        self.canvas.bind("<ButtonRelease-1>", self.mouserelease)
         self.canvas.bind("<MouseWheel>", self.mouseZoom)
         self.last_mouse_down_position = None
+        self.last_mouse_down_time = None
+
+        # movement fading
+        self.fading_possible = True
+        self.move_velocity = (0, 0)
+        self.last_move_time = None
 
         # describes the tile layout
         self.zoom = 0
@@ -128,7 +140,7 @@ class CTkMapWidget(tkinter.Frame):
         self.after(10, self.update_canvas_tile_images)
         self.image_load_thread_pool = []
 
-        for i in range(10):  # add 10 background threads which load tile images from self.image_load_queue_tasks
+        for i in range(25):  # add 10 background threads which load tile images from self.image_load_queue_tasks
             image_load_thread = threading.Thread(daemon=True, target=self.load_images_background)
             image_load_thread.start()
             self.image_load_thread_pool.append(image_load_thread)
@@ -171,7 +183,7 @@ class CTkMapWidget(tkinter.Frame):
                 zoom = round(self.zoom)
                 radius = 1
 
-            if last_pre_cache_position is not None and radius <= 5:
+            if last_pre_cache_position is not None and radius <= 8:
 
                 # pre cache top and bottom row
                 for x in range(self.pre_cache_position[0] - radius, self.pre_cache_position[0] + radius + 1):
@@ -420,8 +432,13 @@ class CTkMapWidget(tkinter.Frame):
         mouse_move_x = self.last_mouse_down_position[0] - event.x
         mouse_move_y = self.last_mouse_down_position[1] - event.y
 
+        # set move velocity for movement fading out
+        delta_t = time.time() - self.last_mouse_down_time
+        self.move_velocity = (mouse_move_x / delta_t, mouse_move_y / delta_t)
+
         # save current mouse position for next move event
         self.last_mouse_down_position = (event.x, event.y)
+        self.last_mouse_down_time = time.time()
 
         # calculate exact tile size of widget
         tile_x_range = self.lower_right_tile_pos[0] - self.upper_left_tile_pos[0]
@@ -438,8 +455,49 @@ class CTkMapWidget(tkinter.Frame):
         self.draw_move()
 
     def mouseclick(self, event):
+        self.fading_possible = False
+
         # save mouse position where mouse is pressed down for moving
         self.last_mouse_down_position = (event.x, event.y)
+        self.last_mouse_down_time = time.time()
+
+    def mouserelease(self, event):
+        self.fading_possible = True
+        self.last_move_time = time.time()
+
+        self.after(1, self.fading_move)
+
+    def fading_move(self):
+        delta_t = time.time() - self.last_move_time
+        self.last_move_time = time.time()
+
+        # only do fading when at least 10 fps possible and fading is possible (no mouse movement at the moment)
+        if delta_t < 0.1 and self.fading_possible is True:
+
+            # calculate fading velocity
+            mouse_move_x = self.move_velocity[0] * delta_t
+            mouse_move_y = self.move_velocity[1] * delta_t
+
+            # lower the fading velocity
+            lowering_factor = 2 ** (-9 * delta_t)
+            self.move_velocity = (self.move_velocity[0] * lowering_factor, self.move_velocity[1] * lowering_factor)
+
+            # calculate exact tile size of widget
+            tile_x_range = self.lower_right_tile_pos[0] - self.upper_left_tile_pos[0]
+            tile_y_range = self.lower_right_tile_pos[1] - self.upper_left_tile_pos[1]
+
+            # calculate the movement in tile coordinates
+            tile_move_x = (mouse_move_x / self.width) * tile_x_range
+            tile_move_y = (mouse_move_y / self.height) * tile_y_range
+
+            # calculate new corner tile positions
+            self.lower_right_tile_pos = (self.lower_right_tile_pos[0] + tile_move_x, self.lower_right_tile_pos[1] + tile_move_y)
+            self.upper_left_tile_pos = (self.upper_left_tile_pos[0] + tile_move_x, self.upper_left_tile_pos[1] + tile_move_y)
+
+            self.draw_move()
+
+            if abs(self.move_velocity[0]) > 1 or abs(self.move_velocity[1]) > 1:
+                self.after(1, self.fading_move)
 
     def set_zoom(self, zoom, relative_pointer_x=0.5, relative_pointer_y=0.5):
 
