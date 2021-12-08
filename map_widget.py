@@ -27,6 +27,89 @@ def num2deg(xtile, ytile, zoom):
     return lat_deg, lon_deg
 
 
+class CanvasPositionMarker:
+    def __init__(self, map_widget: "CTkMapWidget", position, text=None):
+        self.map_widget = map_widget
+        self.position = position
+        self.connection_list = []
+        self.deleted = False
+
+        self.polygon = None
+        self.big_circle = None
+        self.canvas_text = None
+        self.text = text
+
+    def __del__(self):
+        self.map_widget.canvas.delete(self.polygon, self.big_circle, self.canvas_text)
+        self.polygon, self.big_circle, self.canvas_text = None, None, None
+        self.deleted = True
+
+    def delete(self):
+        self.__del__()
+
+    def appear(self):
+        self.deleted = False
+
+    def set_text(self, text):
+        self.text = text
+        self.draw()
+
+    def get_canvas_pos(self, position):
+        tile_position = deg2num(*position, round(self.map_widget.zoom))
+
+        widget_tile_width = self.map_widget.lower_right_tile_pos[0] - self.map_widget.upper_left_tile_pos[0]
+        widget_tile_height = self.map_widget.lower_right_tile_pos[1] - self.map_widget.upper_left_tile_pos[1]
+
+        canvas_pos_x = ((tile_position[0] - self.map_widget.upper_left_tile_pos[0]) / widget_tile_width) * self.map_widget.width
+        canvas_pos_y = ((tile_position[1] - self.map_widget.upper_left_tile_pos[1]) / widget_tile_height) * self.map_widget.height
+
+        return canvas_pos_x, canvas_pos_y
+
+    def draw(self):
+        canvas_pos_x, canvas_pos_y = self.get_canvas_pos(self.position)
+
+        if not self.deleted:
+            if 0 - 50 < canvas_pos_x < self.map_widget.width + 50 and 0 < canvas_pos_y < self.map_widget.height + 70:
+                if self.polygon is None:
+                    self.polygon = self.map_widget.canvas.create_polygon(canvas_pos_x - 14, canvas_pos_y - 23,
+                                                                         canvas_pos_x, canvas_pos_y,
+                                                                         canvas_pos_x + 14, canvas_pos_y - 23,
+                                                                         fill="#C5542D", width=2, outline="#C5542D", tag="marker")
+                else:
+                    self.map_widget.canvas.coords(self.polygon,
+                                                  canvas_pos_x - 14, canvas_pos_y - 23,
+                                                  canvas_pos_x, canvas_pos_y,
+                                                  canvas_pos_x + 14, canvas_pos_y - 23)
+                if self.big_circle is None:
+                    self.big_circle = self.map_widget.canvas.create_oval(canvas_pos_x - 14, canvas_pos_y - 45,
+                                                                         canvas_pos_x + 14, canvas_pos_y - 17,
+                                                                         fill="#9B261E", width=6, outline="#C5542D", tag="marker")
+                else:
+                    self.map_widget.canvas.coords(self.big_circle,
+                                                  canvas_pos_x - 14, canvas_pos_y - 45,
+                                                  canvas_pos_x + 14, canvas_pos_y - 17)
+
+                if self.text is not None:
+                    if self.canvas_text is None:
+                        self.canvas_text = self.map_widget.canvas.create_text(canvas_pos_x, canvas_pos_y - 62,
+                                                                              anchor=tkinter.CENTER,
+                                                                              text=self.text,
+                                                                              fill="#652A22",
+                                                                              font="Tahoma 13 bold",
+                                                                              tag="marker")
+                    else:
+                        self.map_widget.canvas.coords(self.canvas_text, canvas_pos_x, canvas_pos_y - 62)
+                else:
+                    if self.canvas_text is not None:
+                        self.map_widget.canvas.delete(self.canvas_text)
+
+            else:
+                self.map_widget.canvas.delete(self.polygon, self.big_circle, self.canvas_text)
+                self.polygon, self.big_circle, self.canvas_text = None, None, None
+
+            self.map_widget.canvas.lift("marker")
+
+
 class CanvasTile:
     def __init__(self, map_widget: "CTkMapWidget", image, tile_name_position):
         self.map_widget = map_widget
@@ -83,6 +166,8 @@ class CanvasTile:
                     self.map_widget.canvas.delete(self.canvas_object)
                     self.canvas_object = None
 
+        self.map_widget.canvas.lift("marker")
+
 
 class CTkMapWidget(tkinter.Frame):
     def __init__(self, *args,
@@ -123,6 +208,7 @@ class CTkMapWidget(tkinter.Frame):
 
         self.tile_image_cache = {}
         self.canvas_tile_array = []
+        self.canvas_marker_list = []
         self.empty_tile_image = ImageTk.PhotoImage(Image.new("RGB", (256, 256), (190, 190, 190)))
         self.not_loaded_tile_image = ImageTk.PhotoImage(Image.new("RGB", (256, 256), (250, 250, 250)))
         self.tile_server = "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -159,7 +245,7 @@ class CTkMapWidget(tkinter.Frame):
         self.tile_server = tile_server
         self.draw_initial_array()
 
-    def set_position(self, deg_x, deg_y):
+    def set_position(self, deg_x, deg_y, text=None, marker=False):
         # convert given decimal coordinates to OSM coordinates and set corner positions accordingly
         current_tile_position = deg2num(deg_x, deg_y, self.zoom)
         self.upper_left_tile_pos = (current_tile_position[0] - ((self.width / 2) / self.tile_size),
@@ -168,8 +254,17 @@ class CTkMapWidget(tkinter.Frame):
         self.lower_right_tile_pos = (current_tile_position[0] + ((self.width / 2) / self.tile_size),
                                      current_tile_position[1] + ((self.height / 2) / self.tile_size))
 
+        if marker is True:
+            self.set_marker(deg_x, deg_y, text)
+
         self.draw_initial_array()
         # self.draw_move()  # move can only handle position changes that big, so that the old and new view overlap
+
+    def set_marker(self, deg_x, deg_y, text=None):
+        marker = CanvasPositionMarker(self, (deg_x, deg_y), text=text)
+        marker.draw()
+        self.canvas_marker_list.append(marker)
+        return marker
 
     def pre_cache(self):
 
@@ -345,6 +440,9 @@ class CTkMapWidget(tkinter.Frame):
 
             self.canvas_tile_array.append(canvas_tile_column)
 
+        for marker in self.canvas_marker_list:
+            marker.draw()
+
         self.pre_cache_position = (round((self.upper_left_tile_pos[0] + self.lower_right_tile_pos[0]) / 2),
                                    round((self.upper_left_tile_pos[1] + self.lower_right_tile_pos[1]) / 2))
 
@@ -397,6 +495,9 @@ class CTkMapWidget(tkinter.Frame):
             elif right_x_diff <= 1:
                 for x_diff in range(1, math.ceil(-right_x_diff) + 1):
                     del self.canvas_tile_array[-1]
+
+            for marker in self.canvas_marker_list:
+                marker.draw()
 
             self.pre_cache_position = (round((self.upper_left_tile_pos[0] + self.lower_right_tile_pos[0]) / 2),
                                        round((self.upper_left_tile_pos[1] + self.lower_right_tile_pos[1]) / 2))

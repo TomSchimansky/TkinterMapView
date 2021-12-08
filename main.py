@@ -50,7 +50,11 @@ class App(tkinter.Tk):
         # self.map_widget.set_overlay_tile_server("http://a.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png")  # railway infrastructure
 
         self.map_widget.set_zoom(16)
-        self.map_widget.set_position(53.543135, 9.980685)  # Hamburg
+        self.map_widget.set_position(53.543135, 9.980685, marker=True, text="Hamburg")  # Hamburg
+
+        m1 = self.map_widget.set_marker(53.54, 9.99)
+        m1.set_text("53.54, 9.99")
+        # m1.delete()
 
     def about_dialog(self):
         tkinter.messagebox.showinfo(title=self.APP_NAME,
