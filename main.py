@@ -36,7 +36,7 @@ class App(tkinter.Tk):
         self.config(menu=self.menubar)
         self.createcommand('tk::mac::Quit', self.on_closing)
 
-        self.map_widget = CTkMapWidget(width=self.WIDTH, height=self.HEIGHT)
+        self.map_widget = CTkMapWidget(width=self.WIDTH, height=self.HEIGHT, corner_radius=0)
         self.map_widget.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
 
         # self.map_widget.set_tile_server("https://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}&s=Ga", max_zoom=22)  # google normal

@@ -4,6 +4,7 @@ import threading
 import tkinter
 import time
 import PIL
+import sys
 from PIL import Image, ImageTk
 
 
@@ -108,6 +109,8 @@ class CanvasPositionMarker:
                 self.polygon, self.big_circle, self.canvas_text = None, None, None
 
             self.map_widget.canvas.lift("marker")
+            self.map_widget.canvas.lift("corner")
+            self.map_widget.canvas.lift("button")
 
 
 class CanvasTile:
@@ -140,8 +143,10 @@ class CanvasTile:
         self.widget_tile_width = self.map_widget.lower_right_tile_pos[0] - self.map_widget.upper_left_tile_pos[0]
         self.widget_tile_height = self.map_widget.lower_right_tile_pos[1] - self.map_widget.upper_left_tile_pos[1]
 
-        canvas_pos_x = ((self.tile_name_position[0] - self.map_widget.upper_left_tile_pos[0]) / self.widget_tile_width) * self.map_widget.width
-        canvas_pos_y = ((self.tile_name_position[1] - self.map_widget.upper_left_tile_pos[1]) / self.widget_tile_height) * self.map_widget.height
+        canvas_pos_x = ((self.tile_name_position[0] - self.map_widget.upper_left_tile_pos[
+            0]) / self.widget_tile_width) * self.map_widget.width
+        canvas_pos_y = ((self.tile_name_position[1] - self.map_widget.upper_left_tile_pos[
+            1]) / self.widget_tile_height) * self.map_widget.height
 
         return canvas_pos_x, canvas_pos_y
 
@@ -160,25 +165,86 @@ class CanvasTile:
             self.map_widget.canvas.coords(self.canvas_object, canvas_pos_x, canvas_pos_y)
 
             if image_update:
-                if not (self.image == self.map_widget.not_loaded_tile_image or self.image == self.image == self.map_widget.empty_tile_image):
+                if not (
+                        self.image == self.map_widget.not_loaded_tile_image or self.image == self.image == self.map_widget.empty_tile_image):
                     self.map_widget.canvas.itemconfig(self.canvas_object, image=self.image)
                 else:
                     self.map_widget.canvas.delete(self.canvas_object)
                     self.canvas_object = None
 
         self.map_widget.canvas.lift("marker")
+        self.map_widget.canvas.lift("corner")
+        self.map_widget.canvas.lift("button")
+
+
+class CanvasButton:
+    def __init__(self, map_widget: "CTkMapWidget", canvas_position, width=16, height=16, text="", command=None):
+        self.map_widget = map_widget
+        self.canvas_position = canvas_position
+        self.width = width
+        self.height = height
+        self.text = text
+        self.command = command
+
+        self.canvas_rect = None
+        self.canvas_text = None
+
+        self.draw()
+
+    def click(self, event):
+        if self.command is not None:
+            self.command()
+
+    def hover_on(self, event):
+        if self.canvas_rect is not None:
+            self.map_widget.canvas.itemconfig(self.canvas_rect, fill="gray60", outline="gray40")
+
+    def hover_off(self, event):
+        if self.canvas_rect is not None:
+            self.map_widget.canvas.itemconfig(self.canvas_rect, fill="gray20", outline="gray20")
+
+    def draw(self):
+        self.canvas_rect = self.map_widget.canvas.create_polygon(self.canvas_position[0], self.canvas_position[1],
+                                                                 self.canvas_position[0] + self.width, self.canvas_position[1],
+                                                                 self.canvas_position[0] + self.width,
+                                                                 self.canvas_position[1] + self.height,
+                                                                 self.canvas_position[0], self.canvas_position[1] + self.height,
+                                                                 width=16,
+                                                                 fill="gray20", outline="gray20",
+                                                                 tag="button")
+
+        self.canvas_text = self.map_widget.canvas.create_text(self.canvas_position[0] + self.width / 2,
+                                                              self.canvas_position[1] + self.height / 2,
+                                                              anchor=tkinter.CENTER,
+                                                              text=self.text,
+                                                              fill="white",
+                                                              font="Tahoma 16",
+                                                              tag="button")
+
+        self.map_widget.canvas.tag_bind(self.canvas_rect, "<Button-1>", self.click)
+        self.map_widget.canvas.tag_bind(self.canvas_text, "<Button-1>", self.click)
+        self.map_widget.canvas.tag_bind(self.canvas_rect, "<Enter>", self.hover_on)
+        self.map_widget.canvas.tag_bind(self.canvas_text, "<Enter>", self.hover_on)
+        self.map_widget.canvas.tag_bind(self.canvas_rect, "<Leave>", self.hover_off)
+        self.map_widget.canvas.tag_bind(self.canvas_text, "<Leave>", self.hover_off)
 
 
 class CTkMapWidget(tkinter.Frame):
     def __init__(self, *args,
                  width=200,
                  height=200,
+                 corner_radius=0,
+                 bg_color=None,
                  **kwargs):
         super().__init__(*args, **kwargs)
 
         self.width = width
         self.height = height
+        self.corner_radius = corner_radius if corner_radius <= 30 else 30
         self.configure(width=self.width, height=self.height)
+
+        if bg_color is None:
+            self.bg_color = self.master.cget("bg")
 
         self.canvas = tkinter.Canvas(master=self,
                                      highlightthicknes=0,
@@ -214,6 +280,7 @@ class CTkMapWidget(tkinter.Frame):
         self.tile_server = "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
         self.overlay_tile_server = None
         self.max_zoom = 19
+        self.min_zoom = math.ceil(math.log2(math.ceil(self.width / self.tile_size)))
 
         # pre caching for smoother movements (load tile images into cache at a certain radius around the pre_cache_position)
         self.pre_cache_position = None
@@ -236,12 +303,29 @@ class CTkMapWidget(tkinter.Frame):
         self.draw_initial_array()
         self.set_zoom(17)
 
+        # zoom buttons
+        self.button_zoom_in = CanvasButton(self, (20, 20), text="+", command=self.button_zoom_in)
+        self.button_zoom_out = CanvasButton(self, (20, 60), text="-", command=self.button_zoom_out)
+
+        # rounded corners
+        if self.corner_radius > 0:
+            radius = self.corner_radius
+            self.canvas.create_arc(self.width - 2 * radius + 5, self.height - 2 * radius + 5, self.width + 5, self.height + 5,
+                                   style=tkinter.ARC, tag="corner", width=10, outline=self.bg_color, start=-90)
+            self.canvas.create_arc(2 * radius - 5, self.height - 2 * radius + 5, -5, self.height + 5,
+                                   style=tkinter.ARC, tag="corner", width=10, outline=self.bg_color, start=180)
+            self.canvas.create_arc(-5, -5, 2 * radius - 5, 2 * radius - 5,
+                                   style=tkinter.ARC, tag="corner", width=10, outline=self.bg_color, start=-270)
+            self.canvas.create_arc(self.width - 2 * radius + 5, -5, self.width + 5, 2 * radius - 5,
+                                   style=tkinter.ARC, tag="corner", width=10, outline=self.bg_color, start=0)
+
     def set_overlay_tile_server(self, overlay_server):
         self.overlay_tile_server = overlay_server
 
     def set_tile_server(self, tile_server, tile_size=256, max_zoom=19):
         self.max_zoom = max_zoom
         self.tile_size = tile_size
+        self.min_zoom = math.ceil(math.log2(math.ceil(self.width / self.tile_size)))
         self.tile_server = tile_server
         self.draw_initial_array()
 
@@ -331,6 +415,10 @@ class CTkMapWidget(tkinter.Frame):
             self.tile_image_cache[f"{zoom}{x}{y}"] = self.empty_tile_image
             return self.empty_tile_image
 
+        except requests.exceptions.ConnectionError as err:
+            sys.stderr.write(f"{type(self).__name__} ConnectionError\n")
+            return None
+
     def get_tile_image_from_cache(self, zoom, x, y):
         if f"{zoom}{x}{y}" not in self.tile_image_cache:
             return False
@@ -351,6 +439,9 @@ class CTkMapWidget(tkinter.Frame):
                 image = self.get_tile_image_from_cache(zoom, x, y)
                 if image is False:
                     image = self.request_image(zoom, x, y)
+                    if image is None:
+                        self.image_load_queue_tasks.append(task)
+                        continue
 
                 # result queue structure: [((zoom, x, y), corresponding canvas tile object, tile image), ... ]
                 self.image_load_queue_results.append(((zoom, x, y), canvas_tile, image))
@@ -595,6 +686,7 @@ class CTkMapWidget(tkinter.Frame):
             self.lower_right_tile_pos = (self.lower_right_tile_pos[0] + tile_move_x, self.lower_right_tile_pos[1] + tile_move_y)
             self.upper_left_tile_pos = (self.upper_left_tile_pos[0] + tile_move_x, self.upper_left_tile_pos[1] + tile_move_y)
 
+            self.check_map_border_crossing()
             self.draw_move()
 
             if abs(self.move_velocity[0]) > 1 or abs(self.move_velocity[1]) > 1:
@@ -613,8 +705,8 @@ class CTkMapWidget(tkinter.Frame):
 
         if self.zoom > self.max_zoom:
             self.zoom = self.max_zoom
-        if self.zoom < 0:
-            self.zoom = 0
+        if self.zoom < self.min_zoom:
+            self.zoom = self.min_zoom
 
         current_tile_mouse_position = deg2num(*current_deg_mouse_position, round(self.zoom))
 
@@ -624,6 +716,7 @@ class CTkMapWidget(tkinter.Frame):
         self.lower_right_tile_pos = (current_tile_mouse_position[0] + (1 - relative_pointer_x) * (self.width / self.tile_size),
                                      current_tile_mouse_position[1] + (1 - relative_pointer_y) * (self.height / self.tile_size))
 
+        self.check_map_border_crossing()
         self.draw_zoom()
 
     def mouseZoom(self, event):
@@ -631,5 +724,36 @@ class CTkMapWidget(tkinter.Frame):
         relative_mouse_y = event.y / self.height
 
         new_zoom = self.zoom + event.delta * 0.1
+
+        self.set_zoom(new_zoom, relative_pointer_x=relative_mouse_x, relative_pointer_y=relative_mouse_y)
+
+    def check_map_border_crossing(self):
+        diff_x, diff_y = 0, 0
+        if self.upper_left_tile_pos[0] < 0:
+            diff_x += 0 - self.upper_left_tile_pos[0]
+
+        if self.upper_left_tile_pos[1] < 0:
+            diff_y += 0 - self.upper_left_tile_pos[1]
+        if self.lower_right_tile_pos[0] > 2 ** round(self.zoom):
+            diff_x -= self.lower_right_tile_pos[0] - (2 ** round(self.zoom))
+        if self.lower_right_tile_pos[1] > 2 ** round(self.zoom):
+            diff_y -= self.lower_right_tile_pos[1] - (2 ** round(self.zoom))
+
+        self.upper_left_tile_pos = self.upper_left_tile_pos[0] + diff_x, self.upper_left_tile_pos[1] + diff_y
+        self.lower_right_tile_pos = self.lower_right_tile_pos[0] + diff_x, self.lower_right_tile_pos[1] + diff_y
+
+    def button_zoom_in(self):
+        relative_mouse_x = 0.5
+        relative_mouse_y = 0.5
+
+        new_zoom = self.zoom + 1
+
+        self.set_zoom(new_zoom, relative_pointer_x=relative_mouse_x, relative_pointer_y=relative_mouse_y)
+
+    def button_zoom_out(self):
+        relative_mouse_x = 0.5
+        relative_mouse_y = 0.5
+
+        new_zoom = self.zoom - 1
 
         self.set_zoom(new_zoom, relative_pointer_x=relative_mouse_x, relative_pointer_y=relative_mouse_y)
