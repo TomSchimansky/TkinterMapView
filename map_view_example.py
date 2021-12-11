@@ -29,7 +29,7 @@ marker_3 = map_widget.set_marker(52.55, 13.4, text="52.55, 13.4")
 # marker_3.delete()
 
 # set a path
-path_1 = map_widget.set_path([marker_2.position, marker_3.position, (52.57, 13.4), (52.55, 13.35)])
+path_1 = map_widget.set_path([marker_2.position, marker_3.position, (52.568, 13.4), (52.569, 13.35)])
 # path_1.add_position(...)
 # path_1.remove_position(...)
 # path_1.delete()
