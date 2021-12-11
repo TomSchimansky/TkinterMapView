@@ -85,6 +85,7 @@ class CanvasPositionMarker:
                                                                               tag=("marker", "marker_text"))
                     else:
                         self.map_widget.canvas.coords(self.canvas_text, canvas_pos_x, canvas_pos_y - 62)
+                        self.map_widget.canvas.itemconfig(self.canvas_text, text=self.text)
                 else:
                     if self.canvas_text is not None:
                         self.map_widget.canvas.delete(self.canvas_text)

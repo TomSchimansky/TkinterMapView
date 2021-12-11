@@ -88,8 +88,8 @@ class TkinterMapWidget(tkinter.Frame):
             self.image_load_thread_pool.append(image_load_thread)
 
         # set initial position: Brandenburger Tor, Berlin
-        self.set_position(52.516268, 13.377695)
         self.draw_initial_array()
+        self.set_position(52.516268, 13.377695)
         self.set_zoom(17)
 
         # zoom buttons
@@ -128,10 +128,51 @@ class TkinterMapWidget(tkinter.Frame):
                                      current_tile_position[1] + ((self.height / 2) / self.tile_size))
 
         if marker is True:
-            self.set_marker(deg_x, deg_y, text)
+            marker_object = self.set_marker(deg_x, deg_y, text)
+        else:
+            marker_object = None
 
+        self.check_map_border_crossing()
         self.draw_initial_array()
-        # self.draw_move()  # move can only handle position changes that big, so that the old and new view overlap
+
+        return marker_object
+
+    def set_address(self, address_string: str, marker=False, text=None):
+        """ Function uses geocode service of OpenStreetMap (Nominatim).
+            https://geocoder.readthedocs.io/providers/OpenStreetMap.html """
+
+        import geocoder
+        result = geocoder.osm(address_string)
+
+        # determine zoom level for result by bounding box
+        if hasattr(result, "bbox"):
+            zoom_not_possible = True
+
+            for zoom in range(self.min_zoom, self.max_zoom + 1):
+                lower_left_corner = deg2num(*result.bbox['southwest'], zoom)
+                upper_right_corner = deg2num(*result.bbox['northeast'], zoom)
+                tile_width = upper_right_corner[0] - lower_left_corner[0]
+
+                if tile_width > math.floor(self.width / self.tile_size):
+                    zoom_not_possible = False
+                    self.set_zoom(zoom)
+                    break
+
+            if zoom_not_possible:
+                self.set_zoom(self.max_zoom)
+        else:
+            self.set_zoom(10)
+
+        if result.ok:
+            if text is None:
+                try:
+                    text = result.geojson['features'][0]['properties']['address']
+                except:
+                    text = address_string
+
+            return self.set_position(*result.latlng, marker=marker, text=text)
+        else:
+            return False
 
     def set_marker(self, deg_x, deg_y, text=None):
         marker = CanvasPositionMarker(self, (deg_x, deg_y), text=text)

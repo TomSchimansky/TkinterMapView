@@ -54,13 +54,15 @@ class App(tkinter.Tk):
         self.map_widget.set_zoom(16)
         self.map_widget.set_position(53.543135, 9.980685, marker=True, text="Hamburg")  # Hamburg
 
-        m1 = self.map_widget.set_marker(53.54, 9.1)
-        m1.set_position(53.54, 9.99)
-        m1.set_text("53.54, 9.99")
+       # m1 = self.map_widget.set_marker(53.54, 9.1)
+        #m1.set_position(53.54, 9.99)
+        #m1.set_text("53.54, 9.99")
 
-        p1 = self.map_widget.set_path([(53.543135, 9.980685), m1.position, (53.50, 9.95), (53.50, 9.90)])
-        p1.delete()
-        p1.appear()
+        #p1 = self.map_widget.set_path([(53.543135, 9.980685), m1.position, (53.50, 9.95), (53.50, 9.90)])
+        #p1.delete()
+        #p1.appear()
+
+        #m2 = self.map_widget.set_address("nyc", marker=True)
 
     def about_dialog(self):
         tkinter.messagebox.showinfo(title=self.APP_NAME,
