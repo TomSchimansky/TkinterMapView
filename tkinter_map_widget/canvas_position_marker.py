@@ -8,9 +8,10 @@ from .coordinate_convert_functions import deg2num, num2deg
 
 
 class CanvasPositionMarker:
-    def __init__(self, map_widget: "TkinterMapWidget", position, text=None):
+    def __init__(self, map_widget: "TkinterMapWidget", position, text=None, text_color="#652A22"):
         self.map_widget = map_widget
         self.position = position
+        self.text_color = text_color
         self.connection_list = []
         self.deleted = False
 
@@ -30,11 +31,16 @@ class CanvasPositionMarker:
     def appear(self):
         self.deleted = False
 
+    def set_position(self, deg_x, deg_y):
+        self.position = (deg_x, deg_y)
+        self.draw()
+
     def set_text(self, text):
         self.text = text
         self.draw()
 
     def get_canvas_pos(self, position):
+        # noinspection PyCompatibility
         tile_position = deg2num(*position, round(self.map_widget.zoom))
 
         widget_tile_width = self.map_widget.lower_right_tile_pos[0] - self.map_widget.upper_left_tile_pos[0]
@@ -87,6 +93,4 @@ class CanvasPositionMarker:
                 self.map_widget.canvas.delete(self.polygon, self.big_circle, self.canvas_text)
                 self.polygon, self.big_circle, self.canvas_text = None, None, None
 
-            self.map_widget.canvas.lift("marker")
-            self.map_widget.canvas.lift("corner")
-            self.map_widget.canvas.lift("button")
+            self.map_widget.manage_z_order()

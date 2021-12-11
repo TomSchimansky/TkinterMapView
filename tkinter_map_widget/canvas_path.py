@@ -1,0 +1,89 @@
+import tkinter
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .map_widget import TkinterMapWidget
+
+from .coordinate_convert_functions import deg2num, num2deg
+
+
+class CanvasPath:
+    def __init__(self, map_widget: "TkinterMapWidget", position_list: list[tuple]):
+        self.map_widget = map_widget
+        self.position_list = position_list
+        self.canvas_line_positions = []
+        self.connection_list = []
+        self.deleted = False
+
+        self.canvas_line = None
+
+        self.last_upper_left_tile_pos = None
+        self.last_position_list_length = len(self.position_list)
+
+    def __del__(self):
+        self.map_widget.canvas.delete(self.canvas_line)
+        self.canvas_line = None
+
+    def delete(self):
+        self.__del__()
+
+    def appear(self):
+        self.deleted = False
+        self.draw()
+
+    def add_position(self, deg_x, deg_y, index=-1):
+        if index == -1:
+            self.position_list.append((deg_x, deg_y))
+        else:
+            self.position_list.insert(index, (deg_x, deg_y))
+        # self.draw()
+
+    def remove_position(self, deg_x, deg_y):
+        self.position_list.remove((deg_x, deg_y))
+        self.draw()
+
+    def get_canvas_pos(self, position, widget_tile_width, widget_tile_height):
+        tile_position = deg2num(*position, round(self.map_widget.zoom))
+
+        canvas_pos_x = ((tile_position[0] - self.map_widget.upper_left_tile_pos[0]) / widget_tile_width) * self.map_widget.width
+        canvas_pos_y = ((tile_position[1] - self.map_widget.upper_left_tile_pos[1]) / widget_tile_height) * self.map_widget.height
+
+        return canvas_pos_x, canvas_pos_y
+
+    def draw(self, move=False):
+        new_line_length = self.last_position_list_length != len(self.position_list)
+        self.last_position_list_length = len(self.position_list)
+
+        widget_tile_width = self.map_widget.lower_right_tile_pos[0] - self.map_widget.upper_left_tile_pos[0]
+        widget_tile_height = self.map_widget.lower_right_tile_pos[1] - self.map_widget.upper_left_tile_pos[1]
+
+        if move is True and self.last_upper_left_tile_pos is not None and new_line_length is False:
+            x_move = ((self.last_upper_left_tile_pos[0] - self.map_widget.upper_left_tile_pos[0]) / widget_tile_width) * self.map_widget.width
+            y_move = ((self.last_upper_left_tile_pos[1] - self.map_widget.upper_left_tile_pos[1]) / widget_tile_height) * self.map_widget.height
+
+            for i in range(0, len(self.position_list)* 2, 2):
+                self.canvas_line_positions[i] += x_move
+                self.canvas_line_positions[i + 1] += y_move
+        else:
+            self.canvas_line_positions = []
+            for position in self.position_list:
+                canvas_position = self.get_canvas_pos(position, widget_tile_width, widget_tile_height)
+                self.canvas_line_positions.append(canvas_position[0])
+                self.canvas_line_positions.append(canvas_position[1])
+
+        if not self.deleted:
+            if self.canvas_line is None:
+                self.map_widget.canvas.delete(self.canvas_line)
+                self.canvas_line = self.map_widget.canvas.create_line(self.canvas_line_positions,
+                                                                      width=9, fill="#3E69CB",
+                                                                      capstyle=tkinter.ROUND, joinstyle=tkinter.ROUND,
+                                                                      tag="path")
+            else:
+                self.map_widget.canvas.coords(self.canvas_line, self.canvas_line_positions)
+        else:
+            self.map_widget.canvas.delete(self.canvas_line)
+            self.canvas_line = None
+
+        self.map_widget.manage_z_order()
+        self.last_upper_left_tile_pos = self.map_widget.upper_left_tile_pos
+

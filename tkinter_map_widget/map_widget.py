@@ -5,12 +5,14 @@ import tkinter
 import time
 import PIL
 import sys
+import os
 from PIL import Image, ImageTk
 
 from .canvas_position_marker import CanvasPositionMarker
 from .canvas_tile import CanvasTile
 from .coordinate_convert_functions import deg2num, num2deg
 from .canvas_button import CanvasButton
+from .canvas_path import CanvasPath
 
 
 class TkinterMapWidget(tkinter.Frame):
@@ -20,6 +22,7 @@ class TkinterMapWidget(tkinter.Frame):
                  corner_radius=0,
                  bg_color=None,
                  **kwargs):
+        # noinspection PyCompatibility
         super().__init__(*args, **kwargs)
 
         self.width = width
@@ -56,9 +59,11 @@ class TkinterMapWidget(tkinter.Frame):
         self.lower_right_tile_pos = (0, 0)
         self.tile_size = 256  # in pixel
 
+        self.last_zoom = self.zoom
         self.tile_image_cache = {}
         self.canvas_tile_array = []
         self.canvas_marker_list = []
+        self.canvas_path_list = []
         self.empty_tile_image = ImageTk.PhotoImage(Image.new("RGB", (256, 256), (190, 190, 190)))
         self.not_loaded_tile_image = ImageTk.PhotoImage(Image.new("RGB", (256, 256), (250, 250, 250)))
         self.tile_server = "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -134,6 +139,18 @@ class TkinterMapWidget(tkinter.Frame):
         self.canvas_marker_list.append(marker)
         return marker
 
+    def set_path(self, position_list):
+        path = CanvasPath(self, position_list)
+        path.draw()
+        self.canvas_path_list.append(path)
+        return path
+
+    def manage_z_order(self):
+        self.canvas.lift("path")
+        self.canvas.lift("marker")
+        self.canvas.lift("corner")
+        self.canvas.lift("button")
+
     def pre_cache(self):
 
         last_pre_cache_position = None
@@ -150,15 +167,19 @@ class TkinterMapWidget(tkinter.Frame):
 
                 # pre cache top and bottom row
                 for x in range(self.pre_cache_position[0] - radius, self.pre_cache_position[0] + radius + 1):
+                    # noinspection PyCompatibility
                     if f"{zoom}{x}{self.pre_cache_position[1] + radius}" not in self.tile_image_cache:
                         self.request_image(zoom, x, self.pre_cache_position[1] + radius)
+                    # noinspection PyCompatibility
                     if f"{zoom}{x}{self.pre_cache_position[1] - radius}" not in self.tile_image_cache:
                         self.request_image(zoom, x, self.pre_cache_position[1] - radius)
 
                 # pre cache left and right column
                 for y in range(self.pre_cache_position[1] - radius, self.pre_cache_position[1] + radius + 1):
+                    # noinspection PyCompatibility
                     if f"{zoom}{self.pre_cache_position[0] + radius}{y}" not in self.tile_image_cache:
                         self.request_image(zoom, self.pre_cache_position[0] + radius, y)
+                    # noinspection PyCompatibility
                     if f"{zoom}{self.pre_cache_position[0] - radius}{y}" not in self.tile_image_cache:
                         self.request_image(zoom, self.pre_cache_position[0] - radius, y)
 
@@ -169,6 +190,7 @@ class TkinterMapWidget(tkinter.Frame):
                 time.sleep(0.1)
 
             # 10.000 images = 80 MB RAM-usage
+            # noinspection PyCompatibility
             if len(self.tile_image_cache) > 10_000:
                 # delete older tile images...
                 print("Very large cache!!!")
@@ -192,21 +214,26 @@ class TkinterMapWidget(tkinter.Frame):
 
             image_tk = ImageTk.PhotoImage(image)
 
+            # noinspection PyCompatibility
             self.tile_image_cache[f"{zoom}{x}{y}"] = image_tk
             return image_tk
 
         except PIL.UnidentifiedImageError:
+            # noinspection PyCompatibility
             self.tile_image_cache[f"{zoom}{x}{y}"] = self.empty_tile_image
             return self.empty_tile_image
 
         except requests.exceptions.ConnectionError as err:
+            # noinspection PyCompatibility
             sys.stderr.write(f"{type(self).__name__} ConnectionError\n")
             return None
 
     def get_tile_image_from_cache(self, zoom, x, y):
+        # noinspection PyCompatibility
         if f"{zoom}{x}{y}" not in self.tile_image_cache:
             return False
         else:
+            # noinspection PyCompatibility
             return self.tile_image_cache[f"{zoom}{x}{y}"]
 
     def load_images_background(self):
@@ -299,6 +326,7 @@ class TkinterMapWidget(tkinter.Frame):
         self.canvas_tile_array: list[list[CanvasTile]] = []
 
         for x_pos in range(x_tile_range):
+            # noinspection PyCompatibility
             canvas_tile_column: list[CanvasTile] = []
 
             for y_pos in range(y_tile_range):
@@ -307,6 +335,7 @@ class TkinterMapWidget(tkinter.Frame):
                 image = self.get_tile_image_from_cache(round(self.zoom), *tile_name_position)
                 if image is False:
                     canvas_tile = CanvasTile(self, self.not_loaded_tile_image, tile_name_position)
+                    # noinspection PyCompatibility
                     self.image_load_queue_tasks.append(((round(self.zoom), *tile_name_position), canvas_tile))
                 else:
                     canvas_tile = CanvasTile(self, image, tile_name_position)
@@ -318,10 +347,13 @@ class TkinterMapWidget(tkinter.Frame):
         for marker in self.canvas_marker_list:
             marker.draw()
 
+        for path in self.canvas_path_list:
+            path.draw()
+
         self.pre_cache_position = (round((self.upper_left_tile_pos[0] + self.lower_right_tile_pos[0]) / 2),
                                    round((self.upper_left_tile_pos[1] + self.lower_right_tile_pos[1]) / 2))
 
-    def draw_move(self):
+    def draw_move(self, called_after_zoom=False):
 
         if self.canvas_tile_array:
 
@@ -338,7 +370,8 @@ class TkinterMapWidget(tkinter.Frame):
             elif top_y_diff >= 1:
                 for y_diff in range(1, math.ceil(top_y_diff)):
                     for x in range(len(self.canvas_tile_array)):
-                        del self.canvas_tile_array[x][0]
+                        if len(self.canvas_tile_array[x]) > 1:
+                            del self.canvas_tile_array[x][0]
 
             # insert or delete columns on left
             left_x_name_position = self.canvas_tile_array[0][0].tile_name_position[0]
@@ -348,7 +381,8 @@ class TkinterMapWidget(tkinter.Frame):
                     self.insert_column(insert=0, x_name_position=left_x_name_position - x_diff)
             elif left_x_diff >= 1:
                 for x_diff in range(1, math.ceil(left_x_diff)):
-                    del self.canvas_tile_array[0]
+                    if len(self.canvas_tile_array) > 1:
+                        del self.canvas_tile_array[0]
 
             # insert or delete rows on bottom
             bottom_y_name_position = self.canvas_tile_array[0][-1].tile_name_position[1]
@@ -359,7 +393,8 @@ class TkinterMapWidget(tkinter.Frame):
             elif bottom_y_diff <= 1:
                 for y_diff in range(1, math.ceil(-bottom_y_diff) + 1):
                     for x in range(len(self.canvas_tile_array)):
-                        del self.canvas_tile_array[x][-1]
+                        if len(self.canvas_tile_array[x]) > 1:
+                            del self.canvas_tile_array[x][-1]
 
             # insert or delete columns on right
             right_x_name_position = self.canvas_tile_array[-1][0].tile_name_position[0]
@@ -369,10 +404,14 @@ class TkinterMapWidget(tkinter.Frame):
                     self.insert_column(insert=len(self.canvas_tile_array), x_name_position=right_x_name_position + x_diff)
             elif right_x_diff <= 1:
                 for x_diff in range(1, math.ceil(-right_x_diff) + 1):
-                    del self.canvas_tile_array[-1]
+                    if len(self.canvas_tile_array) > 1:
+                        del self.canvas_tile_array[-1]
 
             for marker in self.canvas_marker_list:
                 marker.draw()
+
+            for path in self.canvas_path_list:
+                path.draw(move=not called_after_zoom)
 
             self.pre_cache_position = (round((self.upper_left_tile_pos[0] + self.lower_right_tile_pos[0]) / 2),
                                        round((self.upper_left_tile_pos[1] + self.lower_right_tile_pos[1]) / 2))
@@ -395,13 +434,15 @@ class TkinterMapWidget(tkinter.Frame):
                     image = self.get_tile_image_from_cache(round(self.zoom), *tile_name_position)
                     if image is False:
                         image = self.not_loaded_tile_image
+                        # noinspection PyCompatibility
                         self.image_load_queue_tasks.append(((round(self.zoom), *tile_name_position), self.canvas_tile_array[x_pos][y_pos]))
 
                     self.canvas_tile_array[x_pos][y_pos].set_image_and_position(image, tile_name_position)
 
             self.pre_cache_position = (round((self.upper_left_tile_pos[0] + self.lower_right_tile_pos[0]) / 2),
                                        round((self.upper_left_tile_pos[1] + self.lower_right_tile_pos[1]) / 2))
-            self.draw_move()
+
+            self.draw_move(called_after_zoom=True)
 
     def mousemove(self, event):
         # calculate moving difference from last mouse position
@@ -501,8 +542,10 @@ class TkinterMapWidget(tkinter.Frame):
         self.lower_right_tile_pos = (current_tile_mouse_position[0] + (1 - relative_pointer_x) * (self.width / self.tile_size),
                                      current_tile_mouse_position[1] + (1 - relative_pointer_y) * (self.height / self.tile_size))
 
-        self.check_map_border_crossing()
-        self.draw_zoom()
+        if round(self.zoom) != round(self.last_zoom):
+            self.check_map_border_crossing()
+            self.draw_zoom()
+            self.last_zoom = round(self.zoom)
 
     def mouseZoom(self, event):
         relative_mouse_x = event.x / self.width
@@ -542,3 +585,67 @@ class TkinterMapWidget(tkinter.Frame):
         new_zoom = self.zoom - 1
 
         self.set_zoom(new_zoom, relative_pointer_x=relative_mouse_x, relative_pointer_y=relative_mouse_y)
+
+    @staticmethod
+    def load_offline_tiles_thread(task_queue: list[tuple], finish_queue: list[tuple], server, path):
+        while True:
+            if len(task_queue) > 0:
+                task = task_queue.pop()
+                zoom, x, y = task[0], task[1], task[2]
+
+                if not os.path.isfile(path + f"/{zoom}_{x}_{y}.png"):
+
+                    try:
+                        url = server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
+                        image = Image.open(requests.get(url, stream=True).raw)
+                        image.save(path + f"/{zoom}_{x}_{y}.png")
+                        finish_queue.append(task)
+                    except PIL.UnidentifiedImageError as err:
+                        finish_queue.append(task)
+                    except Exception as err:
+                        task_queue.append(task)
+
+            time.sleep(0.01)
+
+    @staticmethod
+    def load_offline_tiles(path, position_a, position_b, zoom_a, zoom_b, tile_server=None):
+        if tile_server is None:
+            tile_server = "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
+
+        task_queue, finish_queue, thread_pool = [], [], []
+        for i in range(150):
+            thread = threading.Thread(daemon=True, target=TkinterMapWidget.load_offline_tiles_thread,
+                                                args=(task_queue, finish_queue, tile_server, path))
+            thread.start()
+            thread_pool.append(thread)
+
+        for zoom in range(round(zoom_a), round(zoom_b + 1)):
+            upper_left_tile_pos = deg2num(*position_a, zoom)
+            lower_right_tile_pos = deg2num(*position_b, zoom)
+
+            x_range = math.floor(lower_right_tile_pos[0]) - math.floor(upper_left_tile_pos[0])
+            y_range = math.floor(lower_right_tile_pos[1]) - math.floor(upper_left_tile_pos[1])
+
+            print(f"[TkinterMapWidget.load_offline_tiles]: zoom = {zoom}  tiles: {x_range * y_range}  storage: {round(x_range * y_range * 8 / 1024, 1)} MB")
+            print(f"[TkinterMapWidget.load_offline_tiles]:           0%                        100%")
+            print(f"[TkinterMapWidget.load_offline_tiles]: progress: ", end="")
+
+            for x in range(math.floor(upper_left_tile_pos[0]), math.floor(lower_right_tile_pos[0])):
+                for y in range(math.ceil(upper_left_tile_pos[1]), math.ceil(lower_right_tile_pos[1])):
+                    task_queue.append((zoom, x, y))
+
+            tile_counter = 0
+            loading_bar_length = 0
+            while tile_counter < (x_range * y_range):
+
+                percent = tile_counter / (x_range * y_range)
+                length = round(percent * 30)
+                if length > loading_bar_length:
+                    print("=" * (length - loading_bar_length), end="")
+                    loading_bar_length = length
+
+                if len(finish_queue) > 0:
+                    finish_queue.pop()
+                    tile_counter += 1
+
+            print("=" * (30 - loading_bar_length))

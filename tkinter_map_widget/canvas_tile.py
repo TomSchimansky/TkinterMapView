@@ -1,3 +1,4 @@
+# noinspection PyCompatibility
 import tkinter
 from typing import TYPE_CHECKING
 
@@ -64,6 +65,4 @@ class CanvasTile:
                     self.map_widget.canvas.delete(self.canvas_object)
                     self.canvas_object = None
 
-        self.map_widget.canvas.lift("marker")
-        self.map_widget.canvas.lift("corner")
-        self.map_widget.canvas.lift("button")
+        self.map_widget.manage_z_order()

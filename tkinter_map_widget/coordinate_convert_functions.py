@@ -19,4 +19,3 @@ def num2deg(xtile, ytile, zoom):
     lat_rad = math.atan(math.sinh(math.pi * (1 - 2 * ytile / n)))
     lat_deg = math.degrees(lat_rad)
     return lat_deg, lon_deg
-

@@ -1,4 +1,5 @@
 import tkinter
+# noinspection PyCompatibility
 import tkinter.messagebox
 import os
 import customtkinter
@@ -22,6 +23,7 @@ class App(tkinter.Tk):
         self.maxsize(self.WIDTH, self.HEIGHT)
         self.resizable(True, True)
         self.title(self.APP_NAME)
+        # noinspection PyCompatibility
         self.geometry(f"{self.WIDTH}x{self.HEIGHT}")
 
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
@@ -36,7 +38,7 @@ class App(tkinter.Tk):
         self.config(menu=self.menubar)
         self.createcommand('tk::mac::Quit', self.on_closing)
 
-        self.map_widget = TkinterMapWidget(width=self.WIDTH - 100, height=self.HEIGHT - 100, corner_radius=16)
+        self.map_widget = TkinterMapWidget(width=self.WIDTH-100, height=self.HEIGHT-100, corner_radius=20)
         self.map_widget.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
 
         # self.map_widget.set_tile_server("https://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}&s=Ga", max_zoom=22)  # google normal
@@ -52,9 +54,13 @@ class App(tkinter.Tk):
         self.map_widget.set_zoom(16)
         self.map_widget.set_position(53.543135, 9.980685, marker=True, text="Hamburg")  # Hamburg
 
-        m1 = self.map_widget.set_marker(53.54, 9.99)
+        m1 = self.map_widget.set_marker(53.54, 9.1)
+        m1.set_position(53.54, 9.99)
         m1.set_text("53.54, 9.99")
-        # m1.delete()
+
+        p1 = self.map_widget.set_path([(53.543135, 9.980685), m1.position, (53.50, 9.95), (53.50, 9.90)])
+        p1.delete()
+        p1.appear()
 
     def about_dialog(self):
         tkinter.messagebox.showinfo(title=self.APP_NAME,
