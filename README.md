@@ -4,11 +4,11 @@
 
 TkinterMapView is a tile based map renderer widget for the python Tkinter library.
 By default, it displays the OpenStreetMap map, but you can change the tile server to
-whatever you like, and also supports a second tile server for overlays like OpenSeaMap.
-You can set the focus of the widget by a position or address, and place markers
-and or a path on the map.
+whatever you like, and it also supports a second tile server for overlays like OpenSeaMap.
+You can set the current focus of the widget by a position or address, and place markers 
+or a path on the map.
 
-The above image program is produced by the following code example (`map_view_example.py`):
+The above image program is produced by the following code example (`map_view_simple_example.py`):
 
 ````python
 import tkinter

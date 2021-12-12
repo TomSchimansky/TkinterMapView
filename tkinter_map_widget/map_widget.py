@@ -144,26 +144,27 @@ class TkinterMapWidget(tkinter.Frame):
         import geocoder
         result = geocoder.osm(address_string)
 
-        # determine zoom level for result by bounding box
-        if hasattr(result, "bbox"):
-            zoom_not_possible = True
-
-            for zoom in range(self.min_zoom, self.max_zoom + 1):
-                lower_left_corner = deg2num(*result.bbox['southwest'], zoom)
-                upper_right_corner = deg2num(*result.bbox['northeast'], zoom)
-                tile_width = upper_right_corner[0] - lower_left_corner[0]
-
-                if tile_width > math.floor(self.width / self.tile_size):
-                    zoom_not_possible = False
-                    self.set_zoom(zoom)
-                    break
-
-            if zoom_not_possible:
-                self.set_zoom(self.max_zoom)
-        else:
-            self.set_zoom(10)
-
         if result.ok:
+
+            # determine zoom level for result by bounding box
+            if hasattr(result, "bbox"):
+                zoom_not_possible = True
+
+                for zoom in range(self.min_zoom, self.max_zoom + 1):
+                    lower_left_corner = deg2num(*result.bbox['southwest'], zoom)
+                    upper_right_corner = deg2num(*result.bbox['northeast'], zoom)
+                    tile_width = upper_right_corner[0] - lower_left_corner[0]
+
+                    if tile_width > math.floor(self.width / self.tile_size):
+                        zoom_not_possible = False
+                        self.set_zoom(zoom)
+                        break
+
+                if zoom_not_possible:
+                    self.set_zoom(self.max_zoom)
+            else:
+                self.set_zoom(10)
+
             if text is None:
                 try:
                     text = result.geojson['features'][0]['properties']['address']
@@ -177,6 +178,7 @@ class TkinterMapWidget(tkinter.Frame):
     def set_marker(self, deg_x, deg_y, text=None):
         marker = CanvasPositionMarker(self, (deg_x, deg_y), text=text)
         marker.draw()
+
         self.canvas_marker_list.append(marker)
         return marker
 
@@ -185,6 +187,19 @@ class TkinterMapWidget(tkinter.Frame):
         path.draw()
         self.canvas_path_list.append(path)
         return path
+
+    def delete(self, map_object):
+        if isinstance(map_object, CanvasPath):
+            map_object.delete()
+            if map_object in self.canvas_path_list:
+                self.canvas_path_list.remove(map_object)
+
+        elif isinstance(map_object, CanvasPositionMarker):
+            map_object.delete()
+            if map_object in self.canvas_marker_list:
+                self.canvas_marker_list.remove(map_object)
+
+        del map_object
 
     def manage_z_order(self):
         self.canvas.lift("path")
@@ -260,21 +275,17 @@ class TkinterMapWidget(tkinter.Frame):
             return image_tk
 
         except PIL.UnidentifiedImageError:
-            # noinspection PyCompatibility
             self.tile_image_cache[f"{zoom}{x}{y}"] = self.empty_tile_image
             return self.empty_tile_image
 
         except requests.exceptions.ConnectionError as err:
-            # noinspection PyCompatibility
             sys.stderr.write(f"{type(self).__name__} ConnectionError\n")
             return None
 
     def get_tile_image_from_cache(self, zoom, x, y):
-        # noinspection PyCompatibility
         if f"{zoom}{x}{y}" not in self.tile_image_cache:
             return False
         else:
-            # noinspection PyCompatibility
             return self.tile_image_cache[f"{zoom}{x}{y}"]
 
     def load_images_background(self):
@@ -355,6 +366,7 @@ class TkinterMapWidget(tkinter.Frame):
         self.canvas_tile_array.insert(insert, canvas_tile_column)
 
     def draw_initial_array(self):
+        self.image_load_queue_tasks = []
 
         x_tile_range = math.ceil(self.lower_right_tile_pos[0]) - math.floor(self.upper_left_tile_pos[0])
         y_tile_range = math.ceil(self.lower_right_tile_pos[1]) - math.floor(self.upper_left_tile_pos[1])
@@ -363,11 +375,14 @@ class TkinterMapWidget(tkinter.Frame):
         upper_left_x = math.floor(self.upper_left_tile_pos[0])
         upper_left_y = math.floor(self.upper_left_tile_pos[1])
 
+        for x_pos in range(len(self.canvas_tile_array)):
+            for y_pos in range(len(self.canvas_tile_array[0])):
+                self.canvas_tile_array[x_pos][y_pos].__del__()
+
         # create tile array with size (x_tile_range x y_tile_range)
         self.canvas_tile_array: list[list[CanvasTile]] = []
 
         for x_pos in range(x_tile_range):
-            # noinspection PyCompatibility
             canvas_tile_column: list[CanvasTile] = []
 
             for y_pos in range(y_tile_range):
@@ -376,7 +391,6 @@ class TkinterMapWidget(tkinter.Frame):
                 image = self.get_tile_image_from_cache(round(self.zoom), *tile_name_position)
                 if image is False:
                     canvas_tile = CanvasTile(self, self.not_loaded_tile_image, tile_name_position)
-                    # noinspection PyCompatibility
                     self.image_load_queue_tasks.append(((round(self.zoom), *tile_name_position), canvas_tile))
                 else:
                     canvas_tile = CanvasTile(self, image, tile_name_position)
@@ -390,6 +404,10 @@ class TkinterMapWidget(tkinter.Frame):
 
         for path in self.canvas_path_list:
             path.draw()
+
+        for x_pos in range(len(self.canvas_tile_array)):
+            for y_pos in range(len(self.canvas_tile_array[0])):
+                self.canvas_tile_array[x_pos][y_pos].draw()
 
         self.pre_cache_position = (round((self.upper_left_tile_pos[0] + self.lower_right_tile_pos[0]) / 2),
                                    round((self.upper_left_tile_pos[1] + self.lower_right_tile_pos[1]) / 2))

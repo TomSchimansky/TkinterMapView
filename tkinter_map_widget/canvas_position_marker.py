@@ -24,12 +24,10 @@ class CanvasPositionMarker:
         self.map_widget.canvas.delete(self.polygon, self.big_circle, self.canvas_text)
         self.polygon, self.big_circle, self.canvas_text = None, None, None
         self.deleted = True
+        self.map_widget.canvas.update()
 
     def delete(self):
         self.__del__()
-
-    def appear(self):
-        self.deleted = False
 
     def set_position(self, deg_x, deg_y):
         self.position = (deg_x, deg_y)
@@ -40,7 +38,6 @@ class CanvasPositionMarker:
         self.draw()
 
     def get_canvas_pos(self, position):
-        # noinspection PyCompatibility
         tile_position = deg2num(*position, round(self.map_widget.zoom))
 
         widget_tile_width = self.map_widget.lower_right_tile_pos[0] - self.map_widget.upper_left_tile_pos[0]
@@ -51,7 +48,7 @@ class CanvasPositionMarker:
 
         return canvas_pos_x, canvas_pos_y
 
-    def draw(self):
+    def draw(self, event=None):
         canvas_pos_x, canvas_pos_y = self.get_canvas_pos(self.position)
 
         if not self.deleted:
