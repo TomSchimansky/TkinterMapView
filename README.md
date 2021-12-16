@@ -1,3 +1,7 @@
+![PyPI](https://img.shields.io/pypi/v/tkintermapview)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/tkintermapview?color=green&label=pip%20downloads)
+![PyPI - License](https://img.shields.io/pypi/l/customtkinter)
+
 # TkinterMapView - simple Tkinter map component
 
 ![](documentation_images/map_view_example.png)
