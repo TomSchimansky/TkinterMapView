@@ -3,11 +3,11 @@ import tkinter
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .map_widget import TkinterMapWidget
+    from .map_widget import TkinterMapView
 
 
 class CanvasTile:
-    def __init__(self, map_widget: "TkinterMapWidget", image, tile_name_position):
+    def __init__(self, map_widget: "TkinterMapView", image, tile_name_position):
         self.map_widget = map_widget
         self.image = image
         self.tile_name_position = tile_name_position

@@ -19,7 +19,6 @@ pypi link...
 
 ## Documentation / Tutorial
 
----
 ### Importing
 
 Import tkinter as normal and from tkintermapview import the TkinterMapView widget.
@@ -40,7 +39,7 @@ root_tk.geometry(f"{800}x{600}")
 root_tk.title("map_view_example.py")
 
 # create map widget
-map_widget = TkinterMapWidget(root_tk, width=800, height=600, corner_radius=0)
+map_widget = TkinterMapView(root_tk, width=800, height=600, corner_radius=0)
 map_widget.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
 ```
 ---
@@ -131,4 +130,4 @@ self.map_widget.set_overlay_tile_server("http://tiles.openseamap.org/seamark//{z
 self.map_widget.set_overlay_tile_server("http://a.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png")  # railway infrastructure
 ````
 ---
-When you also call `root_tk.mainloop()`at the end, you get a fully working example program.
+When you also call `root_tk.mainloop()` at the end, you get a fully working example program.

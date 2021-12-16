@@ -2,7 +2,7 @@ import tkinter
 import tkinter.messagebox
 import os
 import customtkinter
-from tkinter_map_widget import TkinterMapWidget
+from tkintermapview import TkinterMapView
 
 MAIN_PATH = os.path.dirname(__file__)
 
@@ -45,7 +45,7 @@ class App(tkinter.Tk):
         self.search_bar_clear = customtkinter.CTkButton(master=self, width=100, height=25, text="Clear", command=self.clear)
         self.search_bar_clear.place(x=688, y=25, anchor=tkinter.W)
 
-        self.map_widget = TkinterMapWidget(width=self.WIDTH, height=600, corner_radius=0)
+        self.map_widget = TkinterMapView(width=self.WIDTH, height=600, corner_radius=0)
         self.map_widget.place(x=0, y=50, anchor=tkinter.NW)
 
         self.marker_list_box = tkinter.Listbox(self, width=55, height=7)

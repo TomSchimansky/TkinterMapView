@@ -1,5 +1,5 @@
 import tkinter
-from tkinter_map_widget import TkinterMapWidget
+from tkintermapview import TkinterMapView
 
 # create tkinter window
 root_tk = tkinter.Tk()
@@ -7,7 +7,7 @@ root_tk.geometry(f"{800}x{600}")
 root_tk.title("map_view_example.py")
 
 # create map widget
-map_widget = TkinterMapWidget(root_tk, width=800, height=600, corner_radius=0)
+map_widget = TkinterMapView(root_tk, width=800, height=600, corner_radius=0)
 map_widget.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
 
 # set other tile server (standard is OpenStreetMap)
@@ -19,7 +19,7 @@ map_widget.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
 # map_widget.set_zoom(17)
 
 # set current position with address
-map_widget.set_address("Berlin Germany", marker=False)
+# map_widget.set_address("Berlin Germany", marker=False)
 
 # set a position marker
 marker_2 = map_widget.set_marker(52.516268, 13.377695, text="Brandenburger Tor")

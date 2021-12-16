@@ -3,7 +3,7 @@ import tkinter
 import tkinter.messagebox
 import os
 import customtkinter
-from tkinter_map_widget import TkinterMapWidget
+from tkintermapview import TkinterMapView
 
 MAIN_PATH = os.path.dirname(__file__)
 
@@ -38,7 +38,7 @@ class App(tkinter.Tk):
         self.config(menu=self.menubar)
         self.createcommand('tk::mac::Quit', self.on_closing)
 
-        self.map_widget = TkinterMapWidget(width=self.WIDTH-100, height=self.HEIGHT-100, corner_radius=20)
+        self.map_widget = TkinterMapView(width=self.WIDTH - 100, height=self.HEIGHT - 100, corner_radius=20)
         self.map_widget.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
 
         # self.map_widget.set_tile_server("https://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}&s=Ga", max_zoom=22)  # google normal

@@ -2,11 +2,11 @@ import tkinter
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .map_widget import TkinterMapWidget
+    from .map_widget import TkinterMapView
 
 
 class CanvasButton:
-    def __init__(self, map_widget: "TkinterMapWidget", canvas_position, width=16, height=16, text="", command=None):
+    def __init__(self, map_widget: "TkinterMapView", canvas_position, width=16, height=16, text="", command=None):
         self.map_widget = map_widget
         self.canvas_position = canvas_position
         self.width = width

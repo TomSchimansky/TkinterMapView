@@ -15,14 +15,13 @@ from .canvas_button import CanvasButton
 from .canvas_path import CanvasPath
 
 
-class TkinterMapWidget(tkinter.Frame):
+class TkinterMapView(tkinter.Frame):
     def __init__(self, *args,
-                 width=200,
+                 width=300,
                  height=200,
                  corner_radius=0,
                  bg_color=None,
                  **kwargs):
-        # noinspection PyCompatibility
         super().__init__(*args, **kwargs)
 
         self.width = width
@@ -88,9 +87,8 @@ class TkinterMapWidget(tkinter.Frame):
             self.image_load_thread_pool.append(image_load_thread)
 
         # set initial position: Brandenburger Tor, Berlin
-        self.draw_initial_array()
-        self.set_position(52.516268, 13.377695)
         self.set_zoom(17)
+        self.set_position(52.516268, 13.377695)
 
         # zoom buttons
         self.button_zoom_in = CanvasButton(self, (20, 20), text="+", command=self.button_zoom_in)
@@ -673,8 +671,8 @@ class TkinterMapWidget(tkinter.Frame):
 
         task_queue, finish_queue, thread_pool = [], [], []
         for i in range(150):
-            thread = threading.Thread(daemon=True, target=TkinterMapWidget.load_offline_tiles_thread,
-                                                args=(task_queue, finish_queue, tile_server, path))
+            thread = threading.Thread(daemon=True, target=TkinterMapView.load_offline_tiles_thread,
+                                      args=(task_queue, finish_queue, tile_server, path))
             thread.start()
             thread_pool.append(thread)
 

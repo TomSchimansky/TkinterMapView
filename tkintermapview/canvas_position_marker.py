@@ -2,13 +2,13 @@ import tkinter
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .map_widget import TkinterMapWidget
+    from .map_widget import TkinterMapView
 
 from .coordinate_convert_functions import deg2num, num2deg
 
 
 class CanvasPositionMarker:
-    def __init__(self, map_widget: "TkinterMapWidget", position, text=None, text_color="#652A22"):
+    def __init__(self, map_widget: "TkinterMapView", position, text=None, text_color="#652A22"):
         self.map_widget = map_widget
         self.position = position
         self.text_color = text_color
