@@ -25,6 +25,7 @@ class App(tkinter.Tk):
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.bind("<Command-q>", self.on_closing)
         self.bind("<Command-w>", self.on_closing)
+        self.bind("<Return>", self.search)
 
         self.menubar = tkinter.Menu(master=self)
         self.app_menu = tkinter.Menu(self.menubar, name='apple')
@@ -71,7 +72,7 @@ class App(tkinter.Tk):
         self.search_marker = None
         self.search_in_progress = False
 
-    def search(self):
+    def search(self, event=None):
         if not self.search_in_progress:
             self.search_in_progress = True
             if self.search_marker not in self.marker_list:
