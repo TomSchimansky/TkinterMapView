@@ -345,7 +345,7 @@ class TkinterMapView(tkinter.Frame):
             self.canvas_tile_array[x_pos].insert(insert, canvas_tile)
 
     def insert_column(self, insert, x_name_position):
-        canvas_tile_column: list[CanvasTile] = []
+        canvas_tile_column = []
 
         for y_pos in range(len(self.canvas_tile_array[0])):
             tile_name_position = x_name_position, self.canvas_tile_array[0][y_pos].tile_name_position[1]
@@ -378,10 +378,10 @@ class TkinterMapView(tkinter.Frame):
                 self.canvas_tile_array[x_pos][y_pos].__del__()
 
         # create tile array with size (x_tile_range x y_tile_range)
-        self.canvas_tile_array: list[list[CanvasTile]] = []
+        self.canvas_tile_array = []
 
         for x_pos in range(x_tile_range):
-            canvas_tile_column: list[CanvasTile] = []
+            canvas_tile_column = []
 
             for y_pos in range(y_tile_range):
                 tile_name_position = upper_left_x + x_pos, upper_left_y + y_pos
@@ -644,7 +644,7 @@ class TkinterMapView(tkinter.Frame):
         self.set_zoom(new_zoom, relative_pointer_x=relative_mouse_x, relative_pointer_y=relative_mouse_y)
 
     @staticmethod
-    def load_offline_tiles_thread(task_queue: list[tuple], finish_queue: list[tuple], server, path):
+    def load_offline_tiles_thread(task_queue, finish_queue, server, path):
         while True:
             if len(task_queue) > 0:
                 task = task_queue.pop()

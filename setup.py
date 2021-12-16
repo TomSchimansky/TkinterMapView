@@ -4,13 +4,13 @@ from setuptools import setup
 #
 # 1. delete old /dist
 # 2  increase both version numbers
-# 3. python -m pip install --upgrade build
-# 4. python -m build
-# 5. python -m twine upload dist/*
+# 3. python3.10 -m pip install --upgrade build
+# 4. python3.10 -m build
+# 5. python3.10 -m twine upload dist/*
 #
 
 setup(name="tkintermapview",
-      version="0.1",
+      version="0.4",
       author="Tom Schimansky",
       license="Creative Commons Zero v1.0 Universal",
       url="https://github.com/TomSchimansky/TkinterMapView",

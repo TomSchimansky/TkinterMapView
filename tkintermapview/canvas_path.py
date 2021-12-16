@@ -8,7 +8,7 @@ from .coordinate_convert_functions import deg2num, num2deg
 
 
 class CanvasPath:
-    def __init__(self, map_widget: "TkinterMapView", position_list: list[tuple]):
+    def __init__(self, map_widget: "TkinterMapView", position_list):
         self.map_widget = map_widget
         self.position_list = position_list
         self.canvas_line_positions = []

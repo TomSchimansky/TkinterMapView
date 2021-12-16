@@ -10,12 +10,19 @@ or a path on the map.
 
 The above image program is produced by the code example `map_view_simple_example.py`.
 
+But you can also embed the widget into a program like the following image shows.
+For example by using the [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter#readme) library,
+which provides rounded buttons and frames compatible with the macOS darkmode:
+![](documentation_images/CustomTkinter_complex_axample_map.png)
+
 ## Installation
 
 ```
-pip install tkintermapview
+pip3 install tkintermapview
 ```
-pypi link...
+Update: ``pip3 install tkintermapview --upgrade``
+
+https://pypi.org/project/tkintermapview/
 
 ## Documentation / Tutorial
 
