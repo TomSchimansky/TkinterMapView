@@ -18,7 +18,7 @@ But you can also embed the widget into a program like the following image shows.
 For example by using the [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter#readme) library,
 which provides rounded buttons and frames compatible with the macOS darkmode:
 
-![](documentation_images/CustomTkinter_complex_axample_map.png)
+![](documentation_images/customtkinter_example.png)
 
 # Installation
 
