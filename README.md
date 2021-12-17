@@ -20,7 +20,7 @@ which provides rounded buttons and frames compatible with the macOS darkmode:
 
 ![](documentation_images/CustomTkinter_complex_axample_map.png)
 
-## Installation
+# Installation
 
 ```
 pip3 install tkintermapview
@@ -29,7 +29,7 @@ Update: ``pip3 install tkintermapview --upgrade``
 
 https://pypi.org/project/tkintermapview/
 
-## Documentation / Tutorial
+# Documentation / Tutorial
 
 ### Importing
 
@@ -54,6 +54,7 @@ root_tk.title("map_view_example.py")
 map_widget = TkinterMapView(root_tk, width=800, height=600, corner_radius=0)
 map_widget.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
 ```
+If you also call `root_tk.mainloop()` at the end, this is already a fully working example to test the map widget.
 ---
 ### Set coordinate position
 
