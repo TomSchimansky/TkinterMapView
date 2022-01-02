@@ -6,7 +6,7 @@
 
 ![](documentation_images/map_view_example.png)
 
-TkinterMapView is a tile based map renderer widget for the python Tkinter library.
+TkinterMapView is a tile based interactive map renderer widget for the python Tkinter library.
 By default, it displays the OpenStreetMap map, but you can change the tile server to
 whatever you like, and it also supports a second tile server for overlays like OpenSeaMap.
 You can set the current focus of the widget by a position or address, and place markers 
@@ -18,7 +18,7 @@ But you can also embed the widget into a program like the following image shows.
 For example by using the [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter#readme) library,
 which provides rounded buttons and frames compatible with the macOS darkmode:
 
-![](documentation_images/customtkinter_example.png)
+![](documentation_images/customtkinter_example.gif)
 
 # Installation
 

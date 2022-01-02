@@ -62,10 +62,11 @@ class App(tkinter.Tk):
                                                      text="CheckBox")
         self.check_box_1.place(relx=0.5, y=130, anchor=tkinter.CENTER)
 
-        # ============ frame_right -> frame_info ============
+        # ============ frame_right -> map_widget ============
 
         self.map_widget = TkinterMapView(self.frame_right, width=450, height=250, corner_radius=10)
         self.map_widget.place(x=20, y=20, anchor=tkinter.NW)
+        self.map_widget.set_address("Berlin")
 
         # ============ frame_right <- ============
 
@@ -74,9 +75,9 @@ class App(tkinter.Tk):
                                                 height=16,
                                                 from_=0, to=19,
                                                 border_width=5,
-                                                command=self.slider_event)#self.progressbar.set)
+                                                command=self.slider_event)
         self.slider_1.place(x=310, y=295, anchor=tkinter.NW)
-        self.slider_1.set(16)
+        self.slider_1.set(self.map_widget.zoom)
 
         self.entry = customtkinter.CTkEntry(master=self.frame_right,
                                             width=120,
