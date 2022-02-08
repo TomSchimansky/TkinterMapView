@@ -4,7 +4,6 @@ import threading
 import tkinter
 import time
 import PIL
-import random
 import sys
 import os
 from PIL import Image, ImageTk
@@ -31,7 +30,16 @@ class TkinterMapView(tkinter.Frame):
         self.configure(width=self.width, height=self.height)
 
         if bg_color is None:
-            self.bg_color = self.master.cget("bg")
+            # map widget is placed in a CTkFrame from customtkinter library
+            if hasattr(self.master, "canvas") and hasattr(self.master, "fg_color"):
+                if type(self.master.fg_color) == tuple:
+                    self.bg_color = self.master.fg_color[self.master.appearance_mode]
+                else:
+                    self.bg_color = self.master.fg_color
+
+            # map widget is placed in a tkinter.Frame or tkinter.Tk
+            elif isinstance(self.master, tkinter.Frame) or isinstance(self.master, tkinter.Tk):
+                self.bg_color = self.master.cget("bg")
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -278,7 +286,8 @@ class TkinterMapView(tkinter.Frame):
                     del self.tile_image_cache[key]
 
     def request_image(self, zoom, x, y):
-        # request image from internet, does not check if its in cache
+        """ request image from internet, does not check if its in cache """
+
         try:
             url = self.tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
             image = Image.open(requests.get(url, stream=True).raw)
@@ -677,6 +686,12 @@ class TkinterMapView(tkinter.Frame):
         new_zoom = self.zoom - 1
 
         self.set_zoom(new_zoom, relative_pointer_x=relative_mouse_x, relative_pointer_y=relative_mouse_y)
+
+    def config(self, *args, **kwargs):
+        self.configure(*args, **kwargs)
+
+    def configure(self, *args, **kwargs):
+        super().configure(*args, **kwargs)
 
     @staticmethod
     def load_offline_tiles_thread(task_queue, finish_queue, server, path):

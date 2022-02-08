@@ -10,7 +10,7 @@ from setuptools import setup
 #
 
 setup(name="tkintermapview",
-      version="0.4",
+      version="1.0",
       author="Tom Schimansky",
       license="Creative Commons Zero v1.0 Universal",
       url="https://github.com/TomSchimansky/TkinterMapView",

@@ -1,5 +1,5 @@
 customtkinter~=1.2
 requests==2.26.0
-pillow~=8.3.0
+pillow~=9.0.1
 future~=0.18.2
 geocoder
