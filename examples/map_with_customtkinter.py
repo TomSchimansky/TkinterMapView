@@ -117,7 +117,7 @@ class App(customtkinter.CTk):
 
 
 if __name__ == "__main__":
-    if float(customtkinter.__version__) < 2.0:
+    if float(customtkinter.__version__) < 2.2:
         print("Please update customtkinter: pip3 install customtkinter --upgrade")
         exit()
 
