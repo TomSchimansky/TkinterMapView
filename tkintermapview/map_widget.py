@@ -4,6 +4,7 @@ import threading
 import tkinter
 import time
 import PIL
+import random
 import sys
 import os
 from PIL import Image, ImageTk
@@ -32,18 +33,22 @@ class TkinterMapView(tkinter.Frame):
         if bg_color is None:
             self.bg_color = self.master.cget("bg")
 
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+
         self.canvas = tkinter.Canvas(master=self,
                                      highlightthicknes=0,
                                      bg="#F1EFEA",
                                      width=self.width,
                                      height=self.height)
-        self.canvas.place(x=0, y=0)
+        self.canvas.grid(row=0, column=0, sticky="nsew")
 
         # bind events for mouse button pressed, mouse movement, and scrolling
         self.canvas.bind("<B1-Motion>", self.mousemove)
         self.canvas.bind("<Button-1>", self.mouseclick)
         self.canvas.bind("<ButtonRelease-1>", self.mouserelease)
         self.canvas.bind("<MouseWheel>", self.mouseZoom)
+        self.bind('<Configure>', self.update_dimensions)
         self.last_mouse_down_position = None
         self.last_mouse_down_time = None
 
@@ -94,7 +99,11 @@ class TkinterMapView(tkinter.Frame):
         self.button_zoom_in = CanvasButton(self, (20, 20), text="+", command=self.button_zoom_in)
         self.button_zoom_out = CanvasButton(self, (20, 60), text="-", command=self.button_zoom_out)
 
-        # rounded corners
+        self.draw_rounded_corners()
+
+    def draw_rounded_corners(self):
+        self.canvas.delete("corner")
+
         if self.corner_radius > 0:
             radius = self.corner_radius
             self.canvas.create_arc(self.width - 2 * radius + 5, self.height - 2 * radius + 5, self.width + 5, self.height + 5,
@@ -106,6 +115,17 @@ class TkinterMapView(tkinter.Frame):
             self.canvas.create_arc(self.width - 2 * radius + 5, -5, self.width + 5, 2 * radius - 5,
                                    style=tkinter.ARC, tag="corner", width=10, outline=self.bg_color, start=0)
 
+    def update_dimensions(self, event):
+        # only redraw if dimensions changed (for performance)
+        if self.width != event.width or self.height != event.height:
+            self.width = event.width
+            self.height = event.height
+            self.min_zoom = math.ceil(math.log2(math.ceil(self.width / self.tile_size)))
+
+            self.set_zoom(self.zoom)  # call zoom to set the position vertices right
+            self.draw_move()  # call move to draw new tiles or delete tiles
+            self.draw_rounded_corners()
+
     def set_overlay_tile_server(self, overlay_server):
         self.overlay_tile_server = overlay_server
 
@@ -115,6 +135,11 @@ class TkinterMapView(tkinter.Frame):
         self.min_zoom = math.ceil(math.log2(math.ceil(self.width / self.tile_size)))
         self.tile_server = tile_server
         self.draw_initial_array()
+
+    def get_position(self):
+        return num2deg((self.lower_right_tile_pos[0] + self.upper_left_tile_pos[0]) / 2,
+                       (self.lower_right_tile_pos[1] + self.upper_left_tile_pos[1]) / 2,
+                       round(self.zoom))
 
     def set_position(self, deg_x, deg_y, text=None, marker=False):
         # convert given decimal coordinates to OSM coordinates and set corner positions accordingly
@@ -206,6 +231,7 @@ class TkinterMapView(tkinter.Frame):
         self.canvas.lift("button")
 
     def pre_cache(self):
+        """ single threaded pre-chache tile images in area of self.pre_cache_position """
 
         last_pre_cache_position = None
         radius = 1
@@ -221,19 +247,15 @@ class TkinterMapView(tkinter.Frame):
 
                 # pre cache top and bottom row
                 for x in range(self.pre_cache_position[0] - radius, self.pre_cache_position[0] + radius + 1):
-                    # noinspection PyCompatibility
                     if f"{zoom}{x}{self.pre_cache_position[1] + radius}" not in self.tile_image_cache:
                         self.request_image(zoom, x, self.pre_cache_position[1] + radius)
-                    # noinspection PyCompatibility
                     if f"{zoom}{x}{self.pre_cache_position[1] - radius}" not in self.tile_image_cache:
                         self.request_image(zoom, x, self.pre_cache_position[1] - radius)
 
                 # pre cache left and right column
                 for y in range(self.pre_cache_position[1] - radius, self.pre_cache_position[1] + radius + 1):
-                    # noinspection PyCompatibility
                     if f"{zoom}{self.pre_cache_position[0] + radius}{y}" not in self.tile_image_cache:
                         self.request_image(zoom, self.pre_cache_position[0] + radius, y)
-                    # noinspection PyCompatibility
                     if f"{zoom}{self.pre_cache_position[0] - radius}{y}" not in self.tile_image_cache:
                         self.request_image(zoom, self.pre_cache_position[0] - radius, y)
 
@@ -243,11 +265,17 @@ class TkinterMapView(tkinter.Frame):
             else:
                 time.sleep(0.1)
 
-            # 10.000 images = 80 MB RAM-usage
-            # noinspection PyCompatibility
-            if len(self.tile_image_cache) > 10_000:
-                # delete older tile images...
-                print("Very large cache!!!")
+            # 10_000 images = 80 MB RAM-usage
+            if len(self.tile_image_cache) > 10_000:  # delete random tiles if cache is too large
+                # create list with keys to delete
+                keys_to_delete = []
+                for key in self.tile_image_cache.keys():
+                    if len(self.tile_image_cache) - len(keys_to_delete) > 10_000:
+                        keys_to_delete.append(key)
+
+                # delete keys in list so that len(self.tile_image_cache) == 10_000
+                for key in keys_to_delete:
+                    del self.tile_image_cache[key]
 
     def request_image(self, zoom, x, y):
         # request image from internet, does not check if its in cache
@@ -268,7 +296,6 @@ class TkinterMapView(tkinter.Frame):
 
             image_tk = ImageTk.PhotoImage(image)
 
-            # noinspection PyCompatibility
             self.tile_image_cache[f"{zoom}{x}{y}"] = image_tk
             return image_tk
 
@@ -414,10 +441,6 @@ class TkinterMapView(tkinter.Frame):
 
         if self.canvas_tile_array:
 
-            for x_pos in range(len(self.canvas_tile_array)):
-                for y_pos in range(len(self.canvas_tile_array[0])):
-                    self.canvas_tile_array[x_pos][y_pos].draw()
-
             # insert or delete rows on top
             top_y_name_position = self.canvas_tile_array[0][0].tile_name_position[1]
             top_y_diff = self.upper_left_tile_pos[1] - top_y_name_position
@@ -426,8 +449,9 @@ class TkinterMapView(tkinter.Frame):
                     self.insert_row(insert=0, y_name_position=top_y_name_position - y_diff)
             elif top_y_diff >= 1:
                 for y_diff in range(1, math.ceil(top_y_diff)):
-                    for x in range(len(self.canvas_tile_array)):
+                    for x in range(len(self.canvas_tile_array)-1, -1, -1):
                         if len(self.canvas_tile_array[x]) > 1:
+                            self.canvas_tile_array[x][0].delete_from_canvas()
                             del self.canvas_tile_array[x][0]
 
             # insert or delete columns on left
@@ -439,6 +463,9 @@ class TkinterMapView(tkinter.Frame):
             elif left_x_diff >= 1:
                 for x_diff in range(1, math.ceil(left_x_diff)):
                     if len(self.canvas_tile_array) > 1:
+                        for y in range(len(self.canvas_tile_array[0]) - 1, -1, -1):
+                            self.canvas_tile_array[0][y].delete_from_canvas()
+                            del self.canvas_tile_array[0][y]
                         del self.canvas_tile_array[0]
 
             # insert or delete rows on bottom
@@ -449,8 +476,9 @@ class TkinterMapView(tkinter.Frame):
                     self.insert_row(insert=len(self.canvas_tile_array[0]), y_name_position=bottom_y_name_position + y_diff)
             elif bottom_y_diff <= 1:
                 for y_diff in range(1, math.ceil(-bottom_y_diff) + 1):
-                    for x in range(len(self.canvas_tile_array)):
+                    for x in range(len(self.canvas_tile_array)-1, -1, -1):
                         if len(self.canvas_tile_array[x]) > 1:
+                            self.canvas_tile_array[x][-1].delete_from_canvas()
                             del self.canvas_tile_array[x][-1]
 
             # insert or delete columns on right
@@ -462,7 +490,14 @@ class TkinterMapView(tkinter.Frame):
             elif right_x_diff <= 1:
                 for x_diff in range(1, math.ceil(-right_x_diff) + 1):
                     if len(self.canvas_tile_array) > 1:
+                        for y in range(len(self.canvas_tile_array[-1]) - 1, -1, -1):
+                            self.canvas_tile_array[-1][y].delete_from_canvas()
+                            del self.canvas_tile_array[-1][y]
                         del self.canvas_tile_array[-1]
+
+            for x_pos in range(len(self.canvas_tile_array)):
+                for y_pos in range(len(self.canvas_tile_array[0])):
+                    self.canvas_tile_array[x_pos][y_pos].draw()
 
             for marker in self.canvas_marker_list:
                 marker.draw()

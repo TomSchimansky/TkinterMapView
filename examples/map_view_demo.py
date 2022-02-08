@@ -48,21 +48,21 @@ class App(tkinter.Tk):
         self.map_widget = TkinterMapView(width=self.WIDTH, height=600, corner_radius=0)
         self.map_widget.place(x=0, y=50, anchor=tkinter.NW)
 
-        self.marker_list_box = tkinter.Listbox(self, width=55, height=7)
-        self.marker_list_box.place(x=292, y=660)
+        self.marker_list_box = tkinter.Listbox(self, width=60, height=7)
+        self.marker_list_box.place(x=790, y=660, anchor=tkinter.NE)
 
         self.marker_list = []
         self.marker_path = None
 
-        self.save_marker_button = customtkinter.CTkButton(master=self, width=250, height=25, text="save current marker",
+        self.save_marker_button = customtkinter.CTkButton(master=self, width=200, height=25, text="save current marker",
                                                           command=self.save_marker)
         self.save_marker_button.place(x=20, y=665, anchor=tkinter.NW)
 
-        self.clear_marker_button = customtkinter.CTkButton(master=self, width=250, height=25, text="clear marker list",
+        self.clear_marker_button = customtkinter.CTkButton(master=self, width=200, height=25, text="clear marker list",
                                                           command=self.clear_marker_list)
         self.clear_marker_button.place(x=20, y=705, anchor=tkinter.NW)
 
-        self.connect_marker_button = customtkinter.CTkButton(master=self, width=250, height=25, text="connect marker with path",
+        self.connect_marker_button = customtkinter.CTkButton(master=self, width=200, height=25, text="connect marker with path",
                                                              command=self.connect_marker)
         self.connect_marker_button.place(x=20, y=745, anchor=tkinter.NW)
 
