@@ -1,4 +1,5 @@
 import tkinter
+import sys
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -74,11 +75,16 @@ class CanvasPositionMarker:
 
                 if self.text is not None:
                     if self.canvas_text is None:
+                        if sys.platform == "darwin":
+                            font = "Tahoma 13 bold"
+                        else:
+                            font = "Tahoma 11 bold"
+
                         self.canvas_text = self.map_widget.canvas.create_text(canvas_pos_x, canvas_pos_y - 62,
                                                                               anchor=tkinter.CENTER,
                                                                               text=self.text,
-                                                                              fill="#652A22",
-                                                                              font="Tahoma 13 bold",
+                                                                              fill="#590505",
+                                                                              font=font,
                                                                               tag=("marker", "marker_text"))
                     else:
                         self.map_widget.canvas.coords(self.canvas_text, canvas_pos_x, canvas_pos_y - 62)

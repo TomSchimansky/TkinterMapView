@@ -552,7 +552,10 @@ class TkinterMapView(tkinter.Frame):
 
         # set move velocity for movement fading out
         delta_t = time.time() - self.last_mouse_down_time
-        self.move_velocity = (mouse_move_x / delta_t, mouse_move_y / delta_t)
+        if delta_t == 0:
+            self.move_velocity = (0, 0)
+        else:
+            self.move_velocity = (mouse_move_x / delta_t, mouse_move_y / delta_t)
 
         # save current mouse position for next move event
         self.last_mouse_down_position = (event.x, event.y)
@@ -652,7 +655,12 @@ class TkinterMapView(tkinter.Frame):
         relative_mouse_x = event.x / self.width
         relative_mouse_y = event.y / self.height
 
-        new_zoom = self.zoom + event.delta * 0.1
+        if sys.platform == "darwin":
+            new_zoom = self.zoom + event.delta * 0.1
+        elif "win" in sys.platform:
+            new_zoom = self.zoom + event.delta * 0.01
+        else:
+            new_zoom = self.zoom + event.delta * 0.1
 
         self.set_zoom(new_zoom, relative_pointer_x=relative_mouse_x, relative_pointer_y=relative_mouse_y)
 

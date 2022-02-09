@@ -1,73 +1,70 @@
+import sys
 import tkinter
 import tkinter.messagebox
-import os
-import customtkinter
 from tkintermapview import TkinterMapView
-
-MAIN_PATH = os.path.dirname(__file__)
 
 
 class App(tkinter.Tk):
 
-    APP_NAME = "TkinterMapView demo"
-    ABOUT_TEXT = ""
+    APP_NAME = "map_view_demo.py"
     WIDTH = 800
-    HEIGHT = 790
+    HEIGHT = 750
 
     def __init__(self, *args, **kwargs):
-        customtkinter.enable_macos_darkmode()
         tkinter.Tk.__init__(self, *args, **kwargs)
 
-        self.resizable(False, False)
         self.title(self.APP_NAME)
         self.geometry(f"{self.WIDTH}x{self.HEIGHT}")
 
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
-        self.bind("<Command-q>", self.on_closing)
-        self.bind("<Command-w>", self.on_closing)
         self.bind("<Return>", self.search)
 
-        self.menubar = tkinter.Menu(master=self)
-        self.app_menu = tkinter.Menu(self.menubar, name='apple')
-        self.menubar.add_cascade(menu=self.app_menu)
-        self.app_menu.add_command(label='About ' + self.APP_NAME, command=self.about_dialog)
-        self.app_menu.add_separator()
-        self.config(menu=self.menubar)
-        self.createcommand('tk::mac::Quit', self.on_closing)
+        if sys.platform == "darwin":
+            self.bind("<Command-q>", self.on_closing)
+            self.bind("<Command-w>", self.on_closing)
 
-        self.search_bar = tkinter.Entry(self, width=60)
-        self.search_bar.place(x=10, y=25, anchor=tkinter.W)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=0)
+        self.grid_columnconfigure(2, weight=0)
+        self.grid_rowconfigure(1, weight=1)
+
+        self.search_bar = tkinter.Entry(self, width=50)
+        self.search_bar.grid(row=0, column=0, pady=10, padx=10, sticky="we")
         self.search_bar.focus()
 
-        self.search_bar_button = customtkinter.CTkButton(master=self, width=100, height=25, text="Search", command=self.search)
-        self.search_bar_button.place(x=573, y=25, anchor=tkinter.W)
+        self.search_bar_button = tkinter.Button(master=self, width=8, text="Search", command=self.search)
+        self.search_bar_button.grid(row=0, column=1, pady=10, padx=10)
 
-        self.search_bar_clear = customtkinter.CTkButton(master=self, width=100, height=25, text="Clear", command=self.clear)
-        self.search_bar_clear.place(x=688, y=25, anchor=tkinter.W)
+        self.search_bar_clear = tkinter.Button(master=self, width=8, text="Clear", command=self.clear)
+        self.search_bar_clear.grid(row=0, column=2, pady=10, padx=10)
 
         self.map_widget = TkinterMapView(width=self.WIDTH, height=600, corner_radius=0)
-        self.map_widget.place(x=0, y=50, anchor=tkinter.NW)
+        self.map_widget.grid(row=1, column=0, columnspan=3, sticky="nsew")
 
-        self.marker_list_box = tkinter.Listbox(self, width=60, height=7)
-        self.marker_list_box.place(x=790, y=660, anchor=tkinter.NE)
+        self.marker_list_box = tkinter.Listbox(self, height=8)
+        self.marker_list_box.grid(row=2, column=0, columnspan=1, sticky="ew", padx=10, pady=10)
+
+        self.listbox_button_frame = tkinter.Frame(master=self)
+        self.listbox_button_frame.grid(row=2, column=1, sticky="nsew", columnspan=2)
+
+        self.listbox_button_frame.grid_columnconfigure(0, weight=1)
+
+        self.save_marker_button = tkinter.Button(master=self.listbox_button_frame, width=20, text="save current marker",
+                                                 command=self.save_marker)
+        self.save_marker_button.grid(row=0, column=0, pady=10, padx=10)
+
+        self.clear_marker_button = tkinter.Button(master=self.listbox_button_frame, width=20, text="clear marker list",
+                                                  command=self.clear_marker_list)
+        self.clear_marker_button.grid(row=1, column=0, pady=10, padx=10)
+
+        self.connect_marker_button = tkinter.Button(master=self.listbox_button_frame, width=20, text="connect marker with path",
+                                                    command=self.connect_marker)
+        self.connect_marker_button.grid(row=2, column=0, pady=10, padx=10)
+
+        self.map_widget.set_address("NYC")
 
         self.marker_list = []
         self.marker_path = None
-
-        self.save_marker_button = customtkinter.CTkButton(master=self, width=200, height=25, text="save current marker",
-                                                          command=self.save_marker)
-        self.save_marker_button.place(x=20, y=665, anchor=tkinter.NW)
-
-        self.clear_marker_button = customtkinter.CTkButton(master=self, width=200, height=25, text="clear marker list",
-                                                          command=self.clear_marker_list)
-        self.clear_marker_button.place(x=20, y=705, anchor=tkinter.NW)
-
-        self.connect_marker_button = customtkinter.CTkButton(master=self, width=200, height=25, text="connect marker with path",
-                                                             command=self.connect_marker)
-        self.connect_marker_button.place(x=20, y=745, anchor=tkinter.NW)
-
-        self.map_widget.set_address("Siegessäule")
-        self.map_widget.set_zoom(17)
 
         self.search_marker = None
         self.search_in_progress = False
@@ -116,12 +113,8 @@ class App(tkinter.Tk):
         self.search_bar.delete(0, last=tkinter.END)
         self.map_widget.delete(self.search_marker)
 
-    def about_dialog(self):
-        tkinter.messagebox.showinfo(title=self.APP_NAME,
-                                    message=self.ABOUT_TEXT)
-
     def on_closing(self, event=0):
-        customtkinter.disable_macos_darkmode()
+        self.destroy()
         exit()
 
     def start(self):

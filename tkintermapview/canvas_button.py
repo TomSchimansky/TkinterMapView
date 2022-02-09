@@ -1,4 +1,6 @@
 import tkinter
+import sys
+import math
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -6,11 +8,19 @@ if TYPE_CHECKING:
 
 
 class CanvasButton:
-    def __init__(self, map_widget: "TkinterMapView", canvas_position, width=16, height=16, text="", command=None):
+    def __init__(self, map_widget: "TkinterMapView", canvas_position, text="", command=None):
         self.map_widget = map_widget
         self.canvas_position = canvas_position
-        self.width = width
-        self.height = height
+
+        if sys.platform == "darwin":
+            self.width = 16
+            self.height = 16
+            self.border_width = 16
+        else:
+            self.width = 29
+            self.height = 29
+            self.border_width = 3
+
         self.text = text
         self.command = command
 
@@ -25,7 +35,7 @@ class CanvasButton:
 
     def hover_on(self, event):
         if self.canvas_rect is not None:
-            self.map_widget.canvas.itemconfig(self.canvas_rect, fill="gray60", outline="gray40")
+            self.map_widget.canvas.itemconfig(self.canvas_rect, fill="gray50", outline="gray50")
 
     def hover_off(self, event):
         if self.canvas_rect is not None:
@@ -37,12 +47,12 @@ class CanvasButton:
                                                                  self.canvas_position[0] + self.width,
                                                                  self.canvas_position[1] + self.height,
                                                                  self.canvas_position[0], self.canvas_position[1] + self.height,
-                                                                 width=16,
+                                                                 width=self.border_width,
                                                                  fill="gray20", outline="gray20",
                                                                  tag="button")
 
-        self.canvas_text = self.map_widget.canvas.create_text(self.canvas_position[0] + self.width / 2,
-                                                              self.canvas_position[1] + self.height / 2,
+        self.canvas_text = self.map_widget.canvas.create_text(math.floor(self.canvas_position[0] + self.width / 2),
+                                                              math.floor(self.canvas_position[1] + self.height / 2),
                                                               anchor=tkinter.CENTER,
                                                               text=self.text,
                                                               fill="white",
