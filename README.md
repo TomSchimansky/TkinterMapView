@@ -88,7 +88,7 @@ funtions. You get back a PositionMarker object, so that you can modify or delete
 later:
 ```python
 # set current widget position by address
-marker_1 = map_widget.set_address("colosseo, rome, italy")
+marker_1 = map_widget.set_address("colosseo, rome, italy", marker=True)
 
 print(marker_1.position, marker_1.text)  # get position and text
 
