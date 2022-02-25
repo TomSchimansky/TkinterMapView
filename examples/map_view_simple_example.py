@@ -21,8 +21,11 @@ map_widget.pack(fill="both", expand=True)
 # set current position with address
 # map_widget.set_address("Berlin Germany", marker=False)
 
-# set a position marker
-marker_2 = map_widget.set_marker(52.516268, 13.377695, text="Brandenburger Tor")
+def marker_click(marker):
+    print(f"marker clicked - text: {marker.text}  position: {marker.position}")
+
+# set a position marker (also with a custom color and command on click)
+marker_2 = map_widget.set_marker(52.516268, 13.377695, text="Brandenburger Tor", command=marker_click)
 marker_3 = map_widget.set_marker(52.55, 13.4, text="52.55, 13.4")
 # marker_3.set_position(...)
 # marker_3.set_text(...)

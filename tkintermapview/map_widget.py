@@ -149,7 +149,7 @@ class TkinterMapView(tkinter.Frame):
                        (self.lower_right_tile_pos[1] + self.upper_left_tile_pos[1]) / 2,
                        round(self.zoom))
 
-    def set_position(self, deg_x, deg_y, text=None, marker=False):
+    def set_position(self, deg_x, deg_y, text=None, marker=False, **kwargs):
         # convert given decimal coordinates to OSM coordinates and set corner positions accordingly
         current_tile_position = deg2num(deg_x, deg_y, self.zoom)
         self.upper_left_tile_pos = (current_tile_position[0] - ((self.width / 2) / self.tile_size),
@@ -159,7 +159,7 @@ class TkinterMapView(tkinter.Frame):
                                      current_tile_position[1] + ((self.height / 2) / self.tile_size))
 
         if marker is True:
-            marker_object = self.set_marker(deg_x, deg_y, text)
+            marker_object = self.set_marker(deg_x, deg_y, text, **kwargs)
         else:
             marker_object = None
 
@@ -168,7 +168,7 @@ class TkinterMapView(tkinter.Frame):
 
         return marker_object
 
-    def set_address(self, address_string: str, marker=False, text=None):
+    def set_address(self, address_string: str, marker=False, text=None, **kwargs):
         """ Function uses geocode service of OpenStreetMap (Nominatim).
             https://geocoder.readthedocs.io/providers/OpenStreetMap.html """
 
@@ -202,12 +202,12 @@ class TkinterMapView(tkinter.Frame):
                 except:
                     text = address_string
 
-            return self.set_position(*result.latlng, marker=marker, text=text)
+            return self.set_position(*result.latlng, marker=marker, text=text, **kwargs)
         else:
             return False
 
-    def set_marker(self, deg_x, deg_y, text=None):
-        marker = CanvasPositionMarker(self, (deg_x, deg_y), text=text)
+    def set_marker(self, deg_x, deg_y, text=None, **kwargs):
+        marker = CanvasPositionMarker(self, (deg_x, deg_y), text=text, **kwargs)
         marker.draw()
 
         self.canvas_marker_list.append(marker)
@@ -235,6 +235,7 @@ class TkinterMapView(tkinter.Frame):
     def manage_z_order(self):
         self.canvas.lift("path")
         self.canvas.lift("marker")
+        self.canvas.lift("marker_image")
         self.canvas.lift("corner")
         self.canvas.lift("button")
 

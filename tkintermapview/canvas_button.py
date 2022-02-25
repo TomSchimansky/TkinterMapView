@@ -37,9 +37,18 @@ class CanvasButton:
         if self.canvas_rect is not None:
             self.map_widget.canvas.itemconfig(self.canvas_rect, fill="gray50", outline="gray50")
 
+            if sys.platform == "darwin":
+                self.map_widget.canvas.config(cursor="pointinghand")
+            elif sys.platform.startswith("win"):
+                self.map_widget.canvas.config(cursor="hand2")
+            else:
+                self.map_widget.canvas.config(cursor="hand2")  # not tested what it looks like on Linux!
+
     def hover_off(self, event):
         if self.canvas_rect is not None:
             self.map_widget.canvas.itemconfig(self.canvas_rect, fill="gray20", outline="gray20")
+
+        self.map_widget.canvas.config(cursor="arrow")
 
     def draw(self):
         self.canvas_rect = self.map_widget.canvas.create_polygon(self.canvas_position[0], self.canvas_position[1],

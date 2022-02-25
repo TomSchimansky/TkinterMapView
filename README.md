@@ -110,6 +110,19 @@ marker_3 = map_widget.set_marker(52.55, 13.4, text="52.55, 13.4")
 # marker_3.set_text(...)
 # marker_3.delete()
 ```
+A marker can be also customized by passing the following arguments to .set_marker(),
+.set_address() or .set_position(): `text, font, image (PhotoImage), image_zoom_visibility,
+marker_color_circle, marker_color_outside, text_color, command`.
+
+The command function will be called when the marker is clicked and will
+pass the clicked marker as an argument to the functin which gets called.
+
+The given image will be visible above the marker when the zoom level is in the range specified
+by `image_zoom_visibility`, which is tuple like the following (min_zoom, max_zoom).
+`image_zoom_visibility=(0, float('inf'))` means the image will be visible alle the time.
+The image can also be hidden by calling: `marker.hide_image(True)` or `marker.hide_image(False)`.
+To check if the image is currently hidden you can access: `marker.image_hidden` which is True or False.
+
 ---
 ### Create path from position list
 
