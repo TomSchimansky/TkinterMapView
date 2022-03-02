@@ -65,7 +65,7 @@ class App(customtkinter.CTk):
         self.frame_right.grid_columnconfigure(1, weight=0)
         self.frame_right.grid_columnconfigure(2, weight=1)
 
-        self.map_widget = TkinterMapView(self.frame_right, width=450, height=250, corner_radius=10)
+        self.map_widget = TkinterMapView(self.frame_right, width=450, height=250, corner_radius=9)
         self.map_widget.grid(row=0, rowspan=1, column=0, columnspan=3, sticky="nswe", padx=20, pady=20)
         self.map_widget.set_address("Berlin")
 
@@ -117,7 +117,7 @@ class App(customtkinter.CTk):
 
 
 if __name__ == "__main__":
-    if float(customtkinter.__version__) < 2.2:
+    if float(customtkinter.__version__) < 3.2:
         print("Please update customtkinter: pip3 install customtkinter --upgrade")
         exit()
 

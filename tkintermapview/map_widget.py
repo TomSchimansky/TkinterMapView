@@ -32,7 +32,7 @@ class TkinterMapView(tkinter.Frame):
         if bg_color is None:
             # map widget is placed in a CTkFrame from customtkinter library
             if hasattr(self.master, "canvas") and hasattr(self.master, "fg_color"):
-                if type(self.master.fg_color) == tuple:
+                if type(self.master.fg_color) == tuple or type(self.master.fg_color) == list:
                     self.bg_color = self.master.fg_color[self.master.appearance_mode]
                 else:
                     self.bg_color = self.master.fg_color
@@ -112,15 +112,21 @@ class TkinterMapView(tkinter.Frame):
     def draw_rounded_corners(self):
         self.canvas.delete("corner")
 
+        if sys.platform.startswith("win"):
+            pos_corr = -1
+        else:
+            pos_corr = 0
+
         if self.corner_radius > 0:
             radius = self.corner_radius
-            self.canvas.create_arc(self.width - 2 * radius + 5, self.height - 2 * radius + 5, self.width + 5, self.height + 5,
+            self.canvas.create_arc(self.width - 2 * radius + 5 + pos_corr, self.height - 2 * radius + 5 + pos_corr,
+                                   self.width + 5 + pos_corr, self.height + 5 + pos_corr,
                                    style=tkinter.ARC, tag="corner", width=10, outline=self.bg_color, start=-90)
-            self.canvas.create_arc(2 * radius - 5, self.height - 2 * radius + 5, -5, self.height + 5,
+            self.canvas.create_arc(2 * radius - 5, self.height - 2 * radius + 5 + pos_corr, -5, self.height + 5 + pos_corr,
                                    style=tkinter.ARC, tag="corner", width=10, outline=self.bg_color, start=180)
             self.canvas.create_arc(-5, -5, 2 * radius - 5, 2 * radius - 5,
                                    style=tkinter.ARC, tag="corner", width=10, outline=self.bg_color, start=-270)
-            self.canvas.create_arc(self.width - 2 * radius + 5, -5, self.width + 5, 2 * radius - 5,
+            self.canvas.create_arc(self.width - 2 * radius + 5 + pos_corr, -5, self.width + 5 + pos_corr, 2 * radius - 5,
                                    style=tkinter.ARC, tag="corner", width=10, outline=self.bg_color, start=0)
 
     def update_dimensions(self, event):
