@@ -7,10 +7,11 @@ root_tk = tkinter.Tk()
 root_tk.geometry(f"{1000}x{700}")
 root_tk.title("map_view_simple_example.py")
 
+# path for the database to use
 script_directory = os.path.dirname(os.path.abspath(__file__))
 database_path = os.path.join(script_directory, "offline_tiles_nyc.db")
 
-# create map widget
+# create map widget and only use the tiles from the database, not the online server (use_database_only=True)
 map_widget = TkinterMapView(root_tk, width=1000, height=700, corner_radius=0, use_database_only=True,
                             max_zoom=17, database_path=database_path)
 map_widget.pack(fill="both", expand=True)
