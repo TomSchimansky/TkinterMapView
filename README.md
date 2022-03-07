@@ -157,7 +157,6 @@ self.map_widget.set_overlay_tile_server("http://tiles.openseamap.org/seamark//{z
 self.map_widget.set_overlay_tile_server("http://a.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png")  # railway infrastructure
 ````
 ---
-When you also call `root_tk.mainloop()` at the end, you get a fully working example program.
 
 ### Use offline tiles
 
@@ -168,3 +167,5 @@ If you then create the TkinterMapView widget you pass the database path as an ar
 An example of this can be found here: [examples/map_with_offline_tiles.py](https://github.com/TomSchimansky/TkinterMapView/blob/main/examples/map_with%20offline_tiles.py)
 You can also pass a max_zoom argument to limit the possible zoom range if the database just holds
 the tiles until a specific zoom range which is not the limit of the used server.
+
+---
