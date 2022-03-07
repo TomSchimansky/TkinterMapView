@@ -1,0 +1,20 @@
+import tkinter
+import os
+from tkintermapview import TkinterMapView
+
+# create tkinter window
+root_tk = tkinter.Tk()
+root_tk.geometry(f"{1000}x{700}")
+root_tk.title("map_view_simple_example.py")
+
+script_directory = os.path.dirname(os.path.abspath(__file__))
+database_path = os.path.join(script_directory, "offline_tiles_nyc.db")
+
+# create map widget
+map_widget = TkinterMapView(root_tk, width=1000, height=700, corner_radius=0, use_database_only=True,
+                            max_zoom=17, database_path=database_path)
+map_widget.pack(fill="both", expand=True)
+
+map_widget.set_address("nyc")
+
+root_tk.mainloop()

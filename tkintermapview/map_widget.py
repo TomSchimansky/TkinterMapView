@@ -5,7 +5,8 @@ import tkinter
 import time
 import PIL
 import sys
-import os
+import io
+import sqlite3
 from PIL import Image, ImageTk
 
 from .canvas_position_marker import CanvasPositionMarker
@@ -21,6 +22,9 @@ class TkinterMapView(tkinter.Frame):
                  height=200,
                  corner_radius=0,
                  bg_color=None,
+                 database_path=None,
+                 use_database_only=False,
+                 max_zoom=19,
                  **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -76,11 +80,13 @@ class TkinterMapView(tkinter.Frame):
         self.canvas_tile_array = []
         self.canvas_marker_list = []
         self.canvas_path_list = []
-        self.empty_tile_image = ImageTk.PhotoImage(Image.new("RGB", (256, 256), (190, 190, 190)))
-        self.not_loaded_tile_image = ImageTk.PhotoImage(Image.new("RGB", (256, 256), (250, 250, 250)))
+        self.empty_tile_image = ImageTk.PhotoImage(Image.new("RGB", (self.tile_size, self.tile_size), (190, 190, 190)))
+        self.not_loaded_tile_image = ImageTk.PhotoImage(Image.new("RGB", (self.tile_size, self.tile_size), (250, 250, 250)))
         self.tile_server = "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        self.database_path = database_path
+        self.use_database_only = use_database_only
         self.overlay_tile_server = None
-        self.max_zoom = 19
+        self.max_zoom = max_zoom
         self.min_zoom = math.ceil(math.log2(math.ceil(self.width / self.tile_size)))
 
         # pre caching for smoother movements (load tile images into cache at a certain radius around the pre_cache_position)
@@ -252,6 +258,12 @@ class TkinterMapView(tkinter.Frame):
         radius = 1
         zoom = round(self.zoom)
 
+        if self.database_path is not None:
+            db_connection = sqlite3.connect(self.database_path)
+            db_cursor = db_connection.cursor()
+        else:
+            db_cursor = None
+
         while True:
             if last_pre_cache_position != self.pre_cache_position:
                 last_pre_cache_position = self.pre_cache_position
@@ -263,16 +275,16 @@ class TkinterMapView(tkinter.Frame):
                 # pre cache top and bottom row
                 for x in range(self.pre_cache_position[0] - radius, self.pre_cache_position[0] + radius + 1):
                     if f"{zoom}{x}{self.pre_cache_position[1] + radius}" not in self.tile_image_cache:
-                        self.request_image(zoom, x, self.pre_cache_position[1] + radius)
+                        self.request_image(zoom, x, self.pre_cache_position[1] + radius, db_cursor=db_cursor)
                     if f"{zoom}{x}{self.pre_cache_position[1] - radius}" not in self.tile_image_cache:
-                        self.request_image(zoom, x, self.pre_cache_position[1] - radius)
+                        self.request_image(zoom, x, self.pre_cache_position[1] - radius, db_cursor=db_cursor)
 
                 # pre cache left and right column
                 for y in range(self.pre_cache_position[1] - radius, self.pre_cache_position[1] + radius + 1):
                     if f"{zoom}{self.pre_cache_position[0] + radius}{y}" not in self.tile_image_cache:
-                        self.request_image(zoom, self.pre_cache_position[0] + radius, y)
+                        self.request_image(zoom, self.pre_cache_position[0] + radius, y, db_cursor=db_cursor)
                     if f"{zoom}{self.pre_cache_position[0] - radius}{y}" not in self.tile_image_cache:
-                        self.request_image(zoom, self.pre_cache_position[0] - radius, y)
+                        self.request_image(zoom, self.pre_cache_position[0] - radius, y, db_cursor=db_cursor)
 
                 # raise the radius
                 radius += 1
@@ -292,9 +304,32 @@ class TkinterMapView(tkinter.Frame):
                 for key in keys_to_delete:
                     del self.tile_image_cache[key]
 
-    def request_image(self, zoom, x, y):
-        """ request image from internet, does not check if its in cache """
+    def request_image(self, zoom, x, y, db_cursor=None):
 
+        # if database is available check first if tile is in database, if not try to use server
+        if db_cursor is not None:
+            try:
+                db_cursor.execute("SELECT t.tile_image FROM tiles t WHERE t.zoom=? AND t.x=? AND t.y=? AND t.server=?;",
+                                  (zoom, x, y, self.tile_server))
+                result = db_cursor.fetchone()
+
+                if result is not None:
+                    image = Image.open(io.BytesIO(result[0]))
+                    image_tk = ImageTk.PhotoImage(image)
+                    self.tile_image_cache[f"{zoom}{x}{y}"] = image_tk
+                    return image_tk
+                elif self.use_database_only:
+                    return self.empty_tile_image
+                else:
+                    pass
+
+            except sqlite3.OperationalError:
+                if self.use_database_only:
+                    return self.empty_tile_image
+                else:
+                    pass
+
+        # try to get the tile from the server
         try:
             url = self.tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
             image = Image.open(requests.get(url, stream=True).raw)
@@ -319,9 +354,8 @@ class TkinterMapView(tkinter.Frame):
             self.tile_image_cache[f"{zoom}{x}{y}"] = self.empty_tile_image
             return self.empty_tile_image
 
-        except requests.exceptions.ConnectionError as err:
-            sys.stderr.write(f"{type(self).__name__} ConnectionError\n")
-            return None
+        except requests.exceptions.ConnectionError:
+            return self.empty_tile_image
 
     def get_tile_image_from_cache(self, zoom, x, y):
         if f"{zoom}{x}{y}" not in self.tile_image_cache:
@@ -330,6 +364,12 @@ class TkinterMapView(tkinter.Frame):
             return self.tile_image_cache[f"{zoom}{x}{y}"]
 
     def load_images_background(self):
+
+        if self.database_path is not None:
+            db_connection = sqlite3.connect(self.database_path)
+            db_cursor = db_connection.cursor()
+        else:
+            db_cursor = None
 
         while True:
             if len(self.image_load_queue_tasks) > 0:
@@ -342,7 +382,7 @@ class TkinterMapView(tkinter.Frame):
 
                 image = self.get_tile_image_from_cache(zoom, x, y)
                 if image is False:
-                    image = self.request_image(zoom, x, y)
+                    image = self.request_image(zoom, x, y, db_cursor=db_cursor)
                     if image is None:
                         self.image_load_queue_tasks.append(task)
                         continue
@@ -707,67 +747,3 @@ class TkinterMapView(tkinter.Frame):
 
     def configure(self, *args, **kwargs):
         super().configure(*args, **kwargs)
-
-    @staticmethod
-    def load_offline_tiles_thread(task_queue, finish_queue, server, path):
-        while True:
-            if len(task_queue) > 0:
-                task = task_queue.pop()
-                zoom, x, y = task[0], task[1], task[2]
-
-                if not os.path.isfile(path + f"/{zoom}_{x}_{y}.png"):
-
-                    try:
-                        url = server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
-                        image = Image.open(requests.get(url, stream=True).raw)
-                        image.save(path + f"/{zoom}_{x}_{y}.png")
-                        finish_queue.append(task)
-                    except PIL.UnidentifiedImageError as err:
-                        finish_queue.append(task)
-                    except Exception as err:
-                        task_queue.append(task)
-
-            time.sleep(0.01)
-
-    @staticmethod
-    def load_offline_tiles(path, position_a, position_b, zoom_a, zoom_b, tile_server=None):
-        if tile_server is None:
-            tile_server = "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
-
-        task_queue, finish_queue, thread_pool = [], [], []
-        for i in range(150):
-            thread = threading.Thread(daemon=True, target=TkinterMapView.load_offline_tiles_thread,
-                                      args=(task_queue, finish_queue, tile_server, path))
-            thread.start()
-            thread_pool.append(thread)
-
-        for zoom in range(round(zoom_a), round(zoom_b + 1)):
-            upper_left_tile_pos = deg2num(*position_a, zoom)
-            lower_right_tile_pos = deg2num(*position_b, zoom)
-
-            x_range = math.floor(lower_right_tile_pos[0]) - math.floor(upper_left_tile_pos[0])
-            y_range = math.floor(lower_right_tile_pos[1]) - math.floor(upper_left_tile_pos[1])
-
-            print(f"[TkinterMapWidget.load_offline_tiles]: zoom = {zoom}  tiles: {x_range * y_range}  storage: {round(x_range * y_range * 8 / 1024, 1)} MB")
-            print(f"[TkinterMapWidget.load_offline_tiles]:           0%                        100%")
-            print(f"[TkinterMapWidget.load_offline_tiles]: progress: ", end="")
-
-            for x in range(math.floor(upper_left_tile_pos[0]), math.floor(lower_right_tile_pos[0])):
-                for y in range(math.ceil(upper_left_tile_pos[1]), math.ceil(lower_right_tile_pos[1])):
-                    task_queue.append((zoom, x, y))
-
-            tile_counter = 0
-            loading_bar_length = 0
-            while tile_counter < (x_range * y_range):
-
-                percent = tile_counter / (x_range * y_range)
-                length = round(percent * 30)
-                if length > loading_bar_length:
-                    print("=" * (length - loading_bar_length), end="")
-                    loading_bar_length = length
-
-                if len(finish_queue) > 0:
-                    finish_queue.pop()
-                    tile_counter += 1
-
-            print("=" * (30 - loading_bar_length))
