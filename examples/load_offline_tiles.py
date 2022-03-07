@@ -2,6 +2,8 @@ import tkintermapview
 import os
 
 
+# This scripts creates a database with offline tiles.
+
 # specify the region to load (New York City)
 top_left_position = (40.801825, -74.161928)
 bottom_right_position = (40.561993, -73.742846)
@@ -14,6 +16,8 @@ database_path = os.path.join(script_directory, "offline_tiles_nyc.db")
 
 # create OfflineLoader instance
 loader = tkintermapview.OfflineLoader(path=database_path)
+
+# save the tiles to the database, an existing database will extended
 loader.save_offline_tiles(top_left_position, bottom_right_position, zoom_min, zoom_max)
 
 # You can call save_offline_tiles() multiple times and load multiple regions into the database.
