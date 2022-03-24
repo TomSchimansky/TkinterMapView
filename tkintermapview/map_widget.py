@@ -225,8 +225,8 @@ class TkinterMapView(tkinter.Frame):
         self.canvas_marker_list.append(marker)
         return marker
 
-    def set_path(self, position_list):
-        path = CanvasPath(self, position_list)
+    def set_path(self, position_list, **kwargs):
+        path = CanvasPath(self, position_list, **kwargs)
         path.draw()
         self.canvas_path_list.append(path)
         return path

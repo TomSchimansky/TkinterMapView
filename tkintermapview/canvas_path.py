@@ -1,4 +1,5 @@
 import tkinter
+import sys
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -8,14 +9,17 @@ from .coordinate_convert_functions import deg2num, num2deg
 
 
 class CanvasPath:
-    def __init__(self, map_widget: "TkinterMapView", position_list):
+    def __init__(self, map_widget: "TkinterMapView", position_list, color="#3E69CB", command=None, name=None):
         self.map_widget = map_widget
         self.position_list = position_list
         self.canvas_line_positions = []
         self.connection_list = []
         self.deleted = False
 
+        self.path_color = color
+        self.command = command
         self.canvas_line = None
+        self.name = name
 
         self.last_upper_left_tile_pos = None
         self.last_position_list_length = len(self.position_list)
@@ -50,6 +54,21 @@ class CanvasPath:
 
         return canvas_pos_x, canvas_pos_y
 
+    def mouse_enter(self, event=None):
+        if sys.platform == "darwin":
+            self.map_widget.canvas.config(cursor="pointinghand")
+        elif sys.platform.startswith("win"):
+            self.map_widget.canvas.config(cursor="hand2")
+        else:
+            self.map_widget.canvas.config(cursor="hand2")  # not tested what it looks like on Linux!
+
+    def mouse_leave(self, event=None):
+        self.map_widget.canvas.config(cursor="arrow")
+
+    def click(self, event=None):
+        if self.command is not None:
+            self.command(self)
+
     def draw(self, move=False):
         new_line_length = self.last_position_list_length != len(self.position_list)
         self.last_position_list_length = len(self.position_list)
@@ -75,9 +94,14 @@ class CanvasPath:
             if self.canvas_line is None:
                 self.map_widget.canvas.delete(self.canvas_line)
                 self.canvas_line = self.map_widget.canvas.create_line(self.canvas_line_positions,
-                                                                      width=9, fill="#3E69CB",
+                                                                      width=9, fill=self.path_color,
                                                                       capstyle=tkinter.ROUND, joinstyle=tkinter.ROUND,
                                                                       tag="path")
+
+                if self.command is not None:
+                    self.map_widget.canvas.tag_bind(self.canvas_line, "<Enter>", self.mouse_enter)
+                    self.map_widget.canvas.tag_bind(self.canvas_line, "<Leave>", self.mouse_leave)
+                    self.map_widget.canvas.tag_bind(self.canvas_line, "<Button-1>", self.click)
             else:
                 self.map_widget.canvas.coords(self.canvas_line, self.canvas_line_positions)
         else:
