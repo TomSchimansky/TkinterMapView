@@ -2,12 +2,15 @@ import requests
 import math
 import threading
 import tkinter
+import tkinter.messagebox
 import time
 import PIL
 import sys
 import io
 import sqlite3
+import clipboard
 from PIL import Image, ImageTk
+from typing import Callable
 
 from .canvas_position_marker import CanvasPositionMarker
 from .canvas_tile import CanvasTile
@@ -56,10 +59,11 @@ class TkinterMapView(tkinter.Frame):
         self.canvas.grid(row=0, column=0, sticky="nsew")
 
         # bind events for mouse button pressed, mouse movement, and scrolling
-        self.canvas.bind("<B1-Motion>", self.mousemove)
-        self.canvas.bind("<Button-1>", self.mouseclick)
-        self.canvas.bind("<ButtonRelease-1>", self.mouserelease)
-        self.canvas.bind("<MouseWheel>", self.mouseZoom)
+        self.canvas.bind("<B1-Motion>", self.mouse_move)
+        self.canvas.bind("<Button-1>", self.mouse_click)
+        self.canvas.bind("<ButtonRelease-1>", self.mouse_release)
+        self.canvas.bind("<Button-2>", self.mouse_right_click)
+        self.canvas.bind("<MouseWheel>", self.mouse_zoom)
         self.bind('<Configure>', self.update_dimensions)
         self.last_mouse_down_position = None
         self.last_mouse_down_time = None
@@ -113,7 +117,40 @@ class TkinterMapView(tkinter.Frame):
         self.button_zoom_in = CanvasButton(self, (20, 20), text="+", command=self.button_zoom_in)
         self.button_zoom_out = CanvasButton(self, (20, 60), text="-", command=self.button_zoom_out)
 
+        # right click menu
+        self.right_click_menu_commands = []  # list of dictionaries with label: str, command: func, pass_coords: bool
+
         self.draw_rounded_corners()
+
+    def add_right_click_menu_command(self, label: str, command: Callable, pass_coords: bool = False) -> None:
+        self.right_click_menu_commands.append({"label": label, "command": command, "pass_coords": pass_coords})
+
+    def mouse_right_click(self, event):
+        relative_mouse_x = event.x / self.canvas.winfo_width()
+        relative_mouse_y = event.y / self.canvas.winfo_height()
+
+        tile_mouse_x = self.upper_left_tile_pos[0] + (self.lower_right_tile_pos[0] - self.upper_left_tile_pos[0]) * relative_mouse_x
+        tile_mouse_y = self.upper_left_tile_pos[1] + (self.lower_right_tile_pos[1] - self.upper_left_tile_pos[1]) * relative_mouse_y
+
+        coordinate_mouse_pos = num2deg(tile_mouse_x, tile_mouse_y, round(self.zoom))
+
+        def click_coordinates_event():
+            clipboard.copy(f"{coordinate_mouse_pos[0]:.7f} {coordinate_mouse_pos[1]:.7f}")
+            try:
+                tkinter.messagebox.showinfo(title="", message="Coordinates copied to clipboard!")
+            except Exception:
+                pass
+
+        m = tkinter.Menu(self, tearoff=0)
+        m.add_command(label=f"{coordinate_mouse_pos[0]:.7f} {coordinate_mouse_pos[1]:.7f}",
+                      command=click_coordinates_event)
+        m.add_separator()
+
+        for command in self.right_click_menu_commands:
+            command_callback = lambda: command["command"](coordinate_mouse_pos) if command["pass_coords"] else command["command"]
+            m.add_command(label=command["label"], command=command_callback)
+
+        m.tk_popup(event.x_root, event.y_root)
 
     def draw_rounded_corners(self):
         self.canvas.delete("corner")
@@ -329,6 +366,9 @@ class TkinterMapView(tkinter.Frame):
                 else:
                     pass
 
+            except Exception:
+                return self.empty_tile_image
+
         # try to get the tile from the server
         try:
             url = self.tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
@@ -355,6 +395,9 @@ class TkinterMapView(tkinter.Frame):
             return self.empty_tile_image
 
         except requests.exceptions.ConnectionError:
+            return self.empty_tile_image
+
+        except Exception:
             return self.empty_tile_image
 
     def get_tile_image_from_cache(self, zoom, x, y):
@@ -592,7 +635,7 @@ class TkinterMapView(tkinter.Frame):
 
             self.draw_move(called_after_zoom=True)
 
-    def mousemove(self, event):
+    def mouse_move(self, event):
         # calculate moving difference from last mouse position
         mouse_move_x = self.last_mouse_down_position[0] - event.x
         mouse_move_y = self.last_mouse_down_position[1] - event.y
@@ -623,14 +666,15 @@ class TkinterMapView(tkinter.Frame):
         self.check_map_border_crossing()
         self.draw_move()
 
-    def mouseclick(self, event):
+    def mouse_click(self, event):
+        print("mouseclick", event.x, event.y)
         self.fading_possible = False
 
         # save mouse position where mouse is pressed down for moving
         self.last_mouse_down_position = (event.x, event.y)
         self.last_mouse_down_time = time.time()
 
-    def mouserelease(self, event):
+    def mouse_release(self, event):
         self.fading_possible = True
         self.last_move_time = time.time()
 
@@ -698,7 +742,7 @@ class TkinterMapView(tkinter.Frame):
             self.draw_zoom()
             self.last_zoom = round(self.zoom)
 
-    def mouseZoom(self, event):
+    def mouse_zoom(self, event):
         relative_mouse_x = event.x / self.width
         relative_mouse_y = event.y / self.height
 
