@@ -62,7 +62,6 @@ class TkinterMapView(tkinter.Frame):
         self.canvas.bind("<B1-Motion>", self.mouse_move)
         self.canvas.bind("<Button-1>", self.mouse_click)
         self.canvas.bind("<ButtonRelease-1>", self.mouse_release)
-        self.canvas.bind("<Button-2>", self.mouse_right_click)
         self.canvas.bind("<MouseWheel>", self.mouse_zoom)
         self.bind('<Configure>', self.update_dimensions)
         self.last_mouse_down_position = None
@@ -119,6 +118,10 @@ class TkinterMapView(tkinter.Frame):
 
         # right click menu
         self.right_click_menu_commands = []  # list of dictionaries with label: str, command: func, pass_coords: bool
+        if sys.platform == "darwin":
+            self.canvas.bind("<Button-2>", self.mouse_right_click)
+        else:
+            self.canvas.bind("<Button-3>", self.mouse_right_click)
 
         self.draw_rounded_corners()
 
