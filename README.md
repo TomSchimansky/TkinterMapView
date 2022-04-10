@@ -156,7 +156,7 @@ With the `label` argument you set the text inside the menu, and if `pass_coords`
 is True, the clicked coordinates will be passed to the command function as a tuple. 
 
 
-<img src="documentation_images/right_click_menu_example.png" width="300"/>
+<img src="documentation_images/right_click_menu_example.png" width="400"/>
 
 ---
 ### Use other tile servers
