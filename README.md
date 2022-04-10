@@ -137,6 +137,28 @@ path_1 = map_widget.set_path([marker_2.position, marker_3.position, (52.57, 13.4
 # path_1.delete()
 ````
 ---
+### Right click menu on map
+
+When click on the map with the right mouse button, a menu pops up, where you can view the
+current decimal coordinates and copy them into the clipboard by clicking them.
+You can also add other options to this menu, with the ``map_widget.add_right_click_menu_command`` method:
+```python
+def add_marker_event(coords):
+    print("Add marker:", coords)
+    new_marker = map_widget.set_marker(coords[0], coords[1], text="new marker")
+    
+
+map_widget.add_right_click_menu_command(label="Add Marker",
+                                        command=add_marker_event,
+                                        pass_coords=True)
+```
+With the `label` argument you set the text inside the menu, and if `pass_coords`
+is True, the clicked coordinates will be passed to the command function as a tuple. 
+
+
+<img src="documentation_images/right_click_menu_example.png" width="300"/>
+
+---
 ### Use other tile servers
 
 TkinterMapView uses OpenStreetMap tiles by default, but you can also change the

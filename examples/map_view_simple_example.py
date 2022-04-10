@@ -10,11 +10,6 @@ root_tk.title("map_view_simple_example.py")
 map_widget = TkinterMapView(root_tk, width=1000, height=700, corner_radius=0)
 map_widget.pack(fill="both", expand=True)
 
-def add_marker_event(coords):
-    print(coords)
-
-map_widget.add_right_click_menu_command(label="add marker", command=add_marker_event, pass_coords=True)
-
 # set other tile server (standard is OpenStreetMap)
 # map_widget.set_tile_server("https://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}&s=Ga", max_zoom=22)  # google normal
 # map_widget.set_tile_server("https://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}&s=Ga", max_zoom=22)  # google satellite
