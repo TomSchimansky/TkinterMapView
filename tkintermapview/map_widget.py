@@ -8,7 +8,7 @@ import PIL
 import sys
 import io
 import sqlite3
-import clipboard
+import xerox
 from PIL import Image, ImageTk
 from typing import Callable
 
@@ -138,7 +138,7 @@ class TkinterMapView(tkinter.Frame):
         coordinate_mouse_pos = num2deg(tile_mouse_x, tile_mouse_y, round(self.zoom))
 
         def click_coordinates_event():
-            clipboard.copy(f"{coordinate_mouse_pos[0]:.7f} {coordinate_mouse_pos[1]:.7f}")
+            xerox.copy(f"{coordinate_mouse_pos[0]:.7f} {coordinate_mouse_pos[1]:.7f}")
             try:
                 tkinter.messagebox.showinfo(title="", message="Coordinates copied to clipboard!")
             except Exception:
