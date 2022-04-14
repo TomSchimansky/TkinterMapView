@@ -8,7 +8,7 @@ import PIL
 import sys
 import io
 import sqlite3
-import xerox
+import pyperclip
 from PIL import Image, ImageTk
 from typing import Callable
 
@@ -139,17 +139,14 @@ class TkinterMapView(tkinter.Frame):
 
         def click_coordinates_event():
             try:
-                xerox.copy(f"{coordinate_mouse_pos[0]:.7f} {coordinate_mouse_pos[1]:.7f}")
+                pyperclip.copy(f"{coordinate_mouse_pos[0]:.7f} {coordinate_mouse_pos[1]:.7f}")
                 tkinter.messagebox.showinfo(title="", message="Coordinates copied to clipboard!")
 
-            except xerox.base.XclipNotFound:
-                if sys.platform.startswith("linux"):
-                    tkinter.messagebox.showinfo(title="", message="Error copying to clipboard.\nTry to install xclip:\n'sudo apt-get install xclip'")
-                else:
-                    tkinter.messagebox.showinfo(title="", message="Error copying to clipboard. 'xclip' not found.")
-
             except Exception as err:
-                tkinter.messagebox.showinfo(title="", message="Error copying to clipboard.\n" + str(err))
+                if sys.platform.startswith("linux"):
+                    tkinter.messagebox.showinfo(title="", message="Error copying to clipboard.\n" + str(err) + "\nTry to install xclip:\n'sudo apt-get install xclip'")
+                else:
+                    tkinter.messagebox.showinfo(title="", message="Error copying to clipboard.\n" + str(err))
 
         m = tkinter.Menu(self, tearoff=0)
         m.add_command(label=f"{coordinate_mouse_pos[0]:.7f} {coordinate_mouse_pos[1]:.7f}",

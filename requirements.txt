@@ -4,4 +4,4 @@ pillow~=9.0.1
 future~=0.18.2
 geocoder
 pywin32; platform_system=="Windows"
-xerox
+pyperclip~=1.8.2
