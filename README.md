@@ -16,7 +16,7 @@ The above image program is produced by the code example `map_view_simple_example
 
 But you can also embed the widget into a program like the following image shows.
 For example by using the [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter#readme) library,
-which provides rounded buttons and frames compatible with the macOS darkmode:
+which provides rounded buttons and frames in a light and dark mode:
 
 ![](documentation_images/customtkinter_example.gif)
 | _`examples/map_with_customtkinter.py` on Windows 11_
