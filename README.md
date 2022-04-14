@@ -19,6 +19,7 @@ For example by using the [CustomTkinter](https://github.com/TomSchimansky/Custom
 which provides rounded buttons and frames compatible with the macOS darkmode:
 
 ![](documentation_images/customtkinter_example.gif)
+| _`examples/map_with_customtkinter.py` on Windows 11_
 
 # Installation
 
