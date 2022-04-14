@@ -36,7 +36,7 @@ https://pypi.org/project/tkintermapview/
 Import tkinter as normal and from tkintermapview import the TkinterMapView widget.
 ```python
 import tkinter
-from tkintermapview import TkinterMapView
+import tkintermapview
 ```
 ---
 ### Create the widget
@@ -51,7 +51,7 @@ root_tk.geometry(f"{800}x{600}")
 root_tk.title("map_view_example.py")
 
 # create map widget
-map_widget = TkinterMapView(root_tk, width=800, height=600, corner_radius=0)
+map_widget = tkintermapview.TkinterMapView(root_tk, width=800, height=600, corner_radius=0)
 map_widget.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
 ```
 If you also call `root_tk.mainloop()` at the end, this is already a fully working example to test the map widget.
@@ -167,7 +167,7 @@ map_widget.add_left_click_map_command(left_click_event)
 The callback function will get the decimal coordinates of the clicked location as a tuple.
 
 ---
-### Utility methods of the map widget
+### Utility methods
 
 The following methods can be useful when working with coordinates and address strings,
 they all use the geocoder library with the OSM provider: https://geocoder.readthedocs.io/providers/OpenStreetMap.html:
