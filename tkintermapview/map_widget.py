@@ -142,16 +142,21 @@ class TkinterMapView(tkinter.Frame):
                 xerox.copy(f"{coordinate_mouse_pos[0]:.7f} {coordinate_mouse_pos[1]:.7f}")
                 tkinter.messagebox.showinfo(title="", message="Coordinates copied to clipboard!")
 
-            except Exception:
+            except xerox.base.XclipNotFound:
                 if sys.platform.startswith("linux"):
-                    tkinter.messagebox.showinfo(title="", message="Error copying to clipboard.\nTry install xclip:\n'sudo apt-get install xclip'")
+                    tkinter.messagebox.showinfo(title="", message="Error copying to clipboard.\nTry to install xclip:\n'sudo apt-get install xclip'")
                 else:
-                    tkinter.messagebox.showinfo(title="", message="Error copying to clipboard.")
+                    tkinter.messagebox.showinfo(title="", message="Error copying to clipboard. 'xclip' not found.")
+
+            except Exception as err:
+                tkinter.messagebox.showinfo(title="", message="Error copying to clipboard.\n" + str(err))
 
         m = tkinter.Menu(self, tearoff=0)
         m.add_command(label=f"{coordinate_mouse_pos[0]:.7f} {coordinate_mouse_pos[1]:.7f}",
                       command=click_coordinates_event)
-        m.add_separator()
+
+        if len(self.right_click_menu_commands) > 0:
+            m.add_separator()
 
         for command in self.right_click_menu_commands:
             command_callback = lambda: command["command"](coordinate_mouse_pos) if command["pass_coords"] else command["command"]
