@@ -37,7 +37,4 @@ path_1 = map_widget.set_path([marker_2.position, marker_3.position, (52.568, 13.
 # path_1.remove_position(...)
 # path_1.delete()
 
-r = tkintermapview.convert_address_to_coordinates("London")
-print(r)
-
 root_tk.mainloop()
