@@ -194,7 +194,7 @@ country = tkintermapview.convert_coordinates_to_city(51.5122057, -0.0994014)
 # country: "United Kingdom"
 ```
 
-Convert address string to decimal coords:
+Convert address string to decimal coords. If the address isn't found, the function returns None.
 
 ```python
 address = tkintermapview.convert_address_to_coordinates("London")
