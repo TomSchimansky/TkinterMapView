@@ -2,6 +2,7 @@ import requests
 import math
 import threading
 import tkinter
+import tkinter.ttk as ttk
 import tkinter.messagebox
 import time
 import PIL
@@ -9,33 +10,35 @@ import sys
 import io
 import sqlite3
 import pyperclip
+import geocoder
 from PIL import Image, ImageTk
 from typing import Callable
 
 from .canvas_position_marker import CanvasPositionMarker
 from .canvas_tile import CanvasTile
-from .coordinate_convert_functions import deg2num, num2deg
+from .utility_functions import decimal_to_osm, osm_to_decimal
 from .canvas_button import CanvasButton
 from .canvas_path import CanvasPath
 
 
 class TkinterMapView(tkinter.Frame):
     def __init__(self, *args,
-                 width=300,
-                 height=200,
-                 corner_radius=0,
-                 bg_color=None,
-                 database_path=None,
-                 use_database_only=False,
-                 max_zoom=19,
+                 width: int = 300,
+                 height: int = 200,
+                 corner_radius: int = 0,
+                 bg_color: str = None,
+                 database_path: str = None,
+                 use_database_only: bool = False,
+                 max_zoom: int = 19,
                  **kwargs):
         super().__init__(*args, **kwargs)
 
         self.width = width
         self.height = height
-        self.corner_radius = corner_radius if corner_radius <= 30 else 30
+        self.corner_radius = corner_radius if corner_radius <= 30 else 30  # corner_radius can't be greater than 30
         self.configure(width=self.width, height=self.height)
 
+        # detect color of master widget for rounded corners
         if bg_color is None:
             # map widget is placed in a CTkFrame from customtkinter library
             if hasattr(self.master, "canvas") and hasattr(self.master, "fg_color"):
@@ -44,11 +47,23 @@ class TkinterMapView(tkinter.Frame):
                 else:
                     self.bg_color = self.master.fg_color
 
-            # map widget is placed in a tkinter.Frame or tkinter.Tk
-            elif isinstance(self.master, tkinter.Frame) or isinstance(self.master, tkinter.Tk):
+            # map widget is placed on a tkinter.Frame or tkinter.Tk
+            elif isinstance(self.master, (tkinter.Frame, tkinter.Tk, tkinter.Toplevel, tkinter.LabelFrame)):
                 self.bg_color = self.master.cget("bg")
 
-        self.grid_rowconfigure(0, weight=1)
+            # map widget is placed in a ttk widget
+            elif isinstance(self.master, (ttk.Frame, ttk.LabelFrame, ttk.Notebook)):
+                try:
+                    ttk_style = ttk.Style()
+                    self.bg_color = ttk_style.lookup(self.master.winfo_class(), 'background')
+                except Exception:
+                    self.bg_color = "#000000"
+
+            # map widget is placed on an unknown widget
+            else:
+                self.bg_color = "#000000"
+
+        self.grid_rowconfigure(0, weight=1)  # configure 1x1 grid system
         self.grid_columnconfigure(0, weight=1)
 
         self.canvas = tkinter.Canvas(master=self,
@@ -58,6 +73,10 @@ class TkinterMapView(tkinter.Frame):
                                      height=self.height)
         self.canvas.grid(row=0, column=0, sticky="nsew")
 
+        # zoom buttons
+        self.button_zoom_in = CanvasButton(self, (20, 20), text="+", command=self.button_zoom_in)
+        self.button_zoom_out = CanvasButton(self, (20, 60), text="-", command=self.button_zoom_out)
+
         # bind events for mouse button pressed, mouse movement, and scrolling
         self.canvas.bind("<B1-Motion>", self.mouse_move)
         self.canvas.bind("<Button-1>", self.mouse_click)
@@ -66,6 +85,8 @@ class TkinterMapView(tkinter.Frame):
         self.bind('<Configure>', self.update_dimensions)
         self.last_mouse_down_position = None
         self.last_mouse_down_time = None
+        self.mouse_click_position = None
+        self.map_click_callback = None  # callback function for left click on map
 
         # movement fading
         self.fading_possible = True
@@ -77,14 +98,17 @@ class TkinterMapView(tkinter.Frame):
         self.upper_left_tile_pos = (0, 0)  # in OSM coords
         self.lower_right_tile_pos = (0, 0)
         self.tile_size = 256  # in pixel
-
         self.last_zoom = self.zoom
-        self.tile_image_cache = {}
+
+        # canvas objects and images
         self.canvas_tile_array = []
         self.canvas_marker_list = []
         self.canvas_path_list = []
+        self.tile_image_cache = {}
         self.empty_tile_image = ImageTk.PhotoImage(Image.new("RGB", (self.tile_size, self.tile_size), (190, 190, 190)))
         self.not_loaded_tile_image = ImageTk.PhotoImage(Image.new("RGB", (self.tile_size, self.tile_size), (250, 250, 250)))
+
+        # tile server and database
         self.tile_server = "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
         self.database_path = database_path
         self.use_database_only = use_database_only
@@ -103,18 +127,15 @@ class TkinterMapView(tkinter.Frame):
         self.after(10, self.update_canvas_tile_images)
         self.image_load_thread_pool = []
 
-        for i in range(25):  # add 10 background threads which load tile images from self.image_load_queue_tasks
+        # add background threads which load tile images from self.image_load_queue_tasks
+        for i in range(25):
             image_load_thread = threading.Thread(daemon=True, target=self.load_images_background)
             image_load_thread.start()
             self.image_load_thread_pool.append(image_load_thread)
 
-        # set initial position: Brandenburger Tor, Berlin
+        # set initial position
         self.set_zoom(17)
-        self.set_position(52.516268, 13.377695)
-
-        # zoom buttons
-        self.button_zoom_in = CanvasButton(self, (20, 20), text="+", command=self.button_zoom_in)
-        self.button_zoom_out = CanvasButton(self, (20, 60), text="-", command=self.button_zoom_out)
+        self.set_position(52.516268, 13.377695)  # Brandenburger Tor, Berlin
 
         # right click menu
         self.right_click_menu_commands = []  # list of dictionaries with label: str, command: func, pass_coords: bool
@@ -124,42 +145,6 @@ class TkinterMapView(tkinter.Frame):
             self.canvas.bind("<Button-3>", self.mouse_right_click)
 
         self.draw_rounded_corners()
-
-    def add_right_click_menu_command(self, label: str, command: Callable, pass_coords: bool = False) -> None:
-        self.right_click_menu_commands.append({"label": label, "command": command, "pass_coords": pass_coords})
-
-    def mouse_right_click(self, event):
-        relative_mouse_x = event.x / self.canvas.winfo_width()
-        relative_mouse_y = event.y / self.canvas.winfo_height()
-
-        tile_mouse_x = self.upper_left_tile_pos[0] + (self.lower_right_tile_pos[0] - self.upper_left_tile_pos[0]) * relative_mouse_x
-        tile_mouse_y = self.upper_left_tile_pos[1] + (self.lower_right_tile_pos[1] - self.upper_left_tile_pos[1]) * relative_mouse_y
-
-        coordinate_mouse_pos = num2deg(tile_mouse_x, tile_mouse_y, round(self.zoom))
-
-        def click_coordinates_event():
-            try:
-                pyperclip.copy(f"{coordinate_mouse_pos[0]:.7f} {coordinate_mouse_pos[1]:.7f}")
-                tkinter.messagebox.showinfo(title="", message="Coordinates copied to clipboard!")
-
-            except Exception as err:
-                if sys.platform.startswith("linux"):
-                    tkinter.messagebox.showinfo(title="", message="Error copying to clipboard.\n" + str(err) + "\nTry to install xclip:\n'sudo apt-get install xclip'")
-                else:
-                    tkinter.messagebox.showinfo(title="", message="Error copying to clipboard.\n" + str(err))
-
-        m = tkinter.Menu(self, tearoff=0)
-        m.add_command(label=f"{coordinate_mouse_pos[0]:.7f} {coordinate_mouse_pos[1]:.7f}",
-                      command=click_coordinates_event)
-
-        if len(self.right_click_menu_commands) > 0:
-            m.add_separator()
-
-        for command in self.right_click_menu_commands:
-            command_callback = lambda: command["command"](coordinate_mouse_pos) if command["pass_coords"] else command["command"]
-            m.add_command(label=command["label"], command=command_callback)
-
-        m.tk_popup(event.x_root, event.y_root)
 
     def draw_rounded_corners(self):
         self.canvas.delete("corner")
@@ -192,24 +177,71 @@ class TkinterMapView(tkinter.Frame):
             self.draw_move()  # call move to draw new tiles or delete tiles
             self.draw_rounded_corners()
 
-    def set_overlay_tile_server(self, overlay_server):
+    def add_right_click_menu_command(self, label: str, command: Callable, pass_coords: bool = False) -> None:
+        self.right_click_menu_commands.append({"label": label, "command": command, "pass_coords": pass_coords})
+
+    def add_left_click_map_command(self, callback_function):
+        self.map_click_callback = callback_function
+
+    def convert_canvas_coords_to_decimal_coords(self, canvas_x: int, canvas_y: int) -> tuple:
+        relative_mouse_x = canvas_x / self.canvas.winfo_width()
+        relative_mouse_y = canvas_y / self.canvas.winfo_height()
+
+        tile_mouse_x = self.upper_left_tile_pos[0] + (self.lower_right_tile_pos[0] - self.upper_left_tile_pos[0]) * relative_mouse_x
+        tile_mouse_y = self.upper_left_tile_pos[1] + (self.lower_right_tile_pos[1] - self.upper_left_tile_pos[1]) * relative_mouse_y
+
+        coordinate_mouse_pos = osm_to_decimal(tile_mouse_x, tile_mouse_y, round(self.zoom))
+        return coordinate_mouse_pos
+
+    def mouse_right_click(self, event):
+        coordinate_mouse_pos = self.convert_canvas_coords_to_decimal_coords(event.x, event.y)
+
+        def click_coordinates_event():
+            try:
+                pyperclip.copy(f"{coordinate_mouse_pos[0]:.7f} {coordinate_mouse_pos[1]:.7f}")
+                tkinter.messagebox.showinfo(title="", message="Coordinates copied to clipboard!")
+
+            except Exception as err:
+                if sys.platform.startswith("linux"):
+                    tkinter.messagebox.showinfo(title="", message="Error copying to clipboard.\n" + str(err) + "\nTry to install xclip:\n'sudo apt-get install xclip'")
+                else:
+                    tkinter.messagebox.showinfo(title="", message="Error copying to clipboard.\n" + str(err))
+
+        m = tkinter.Menu(self, tearoff=0)
+        m.add_command(label=f"{coordinate_mouse_pos[0]:.7f} {coordinate_mouse_pos[1]:.7f}",
+                      command=click_coordinates_event)
+
+        if len(self.right_click_menu_commands) > 0:
+            m.add_separator()
+
+        for command in self.right_click_menu_commands:
+            command_callback = lambda: command["command"](coordinate_mouse_pos) if command["pass_coords"] else command["command"]
+            m.add_command(label=command["label"], command=command_callback)
+
+        m.tk_popup(event.x_root, event.y_root)  # display menu
+
+    def set_overlay_tile_server(self, overlay_server: str):
         self.overlay_tile_server = overlay_server
 
-    def set_tile_server(self, tile_server, tile_size=256, max_zoom=19):
+    def set_tile_server(self, tile_server: str, tile_size: int = 256, max_zoom: int = 19):
         self.max_zoom = max_zoom
         self.tile_size = tile_size
         self.min_zoom = math.ceil(math.log2(math.ceil(self.width / self.tile_size)))
         self.tile_server = tile_server
         self.draw_initial_array()
 
-    def get_position(self):
-        return num2deg((self.lower_right_tile_pos[0] + self.upper_left_tile_pos[0]) / 2,
-                       (self.lower_right_tile_pos[1] + self.upper_left_tile_pos[1]) / 2,
-                       round(self.zoom))
+    def get_position(self) -> tuple:
+        """ returns current middle position of map widget in decimal coordinates """
 
-    def set_position(self, deg_x, deg_y, text=None, marker=False, **kwargs):
+        return osm_to_decimal((self.lower_right_tile_pos[0] + self.upper_left_tile_pos[0]) / 2,
+                              (self.lower_right_tile_pos[1] + self.upper_left_tile_pos[1]) / 2,
+                              round(self.zoom))
+
+    def set_position(self, deg_x, deg_y, text=None, marker=False, **kwargs) -> CanvasPositionMarker:
+        """ set new middle position of map in decimal coordinates """
+
         # convert given decimal coordinates to OSM coordinates and set corner positions accordingly
-        current_tile_position = deg2num(deg_x, deg_y, self.zoom)
+        current_tile_position = decimal_to_osm(deg_x, deg_y, self.zoom)
         self.upper_left_tile_pos = (current_tile_position[0] - ((self.width / 2) / self.tile_size),
                                     current_tile_position[1] - ((self.height / 2) / self.tile_size))
 
@@ -226,11 +258,10 @@ class TkinterMapView(tkinter.Frame):
 
         return marker_object
 
-    def set_address(self, address_string: str, marker=False, text=None, **kwargs):
+    def set_address(self, address_string: str, marker: bool = False, text: str = None, **kwargs) -> CanvasPositionMarker:
         """ Function uses geocode service of OpenStreetMap (Nominatim).
             https://geocoder.readthedocs.io/providers/OpenStreetMap.html """
 
-        import geocoder
         result = geocoder.osm(address_string)
 
         if result.ok:
@@ -240,8 +271,8 @@ class TkinterMapView(tkinter.Frame):
                 zoom_not_possible = True
 
                 for zoom in range(self.min_zoom, self.max_zoom + 1):
-                    lower_left_corner = deg2num(*result.bbox['southwest'], zoom)
-                    upper_right_corner = deg2num(*result.bbox['northeast'], zoom)
+                    lower_left_corner = decimal_to_osm(*result.bbox['southwest'], zoom)
+                    upper_right_corner = decimal_to_osm(*result.bbox['northeast'], zoom)
                     tile_width = upper_right_corner[0] - lower_left_corner[0]
 
                     if tile_width > math.floor(self.width / self.tile_size):
@@ -264,20 +295,20 @@ class TkinterMapView(tkinter.Frame):
         else:
             return False
 
-    def set_marker(self, deg_x, deg_y, text=None, **kwargs):
+    def set_marker(self, deg_x: float, deg_y: float, text: str = None, **kwargs) -> CanvasPositionMarker:
         marker = CanvasPositionMarker(self, (deg_x, deg_y), text=text, **kwargs)
         marker.draw()
 
         self.canvas_marker_list.append(marker)
         return marker
 
-    def set_path(self, position_list, **kwargs):
+    def set_path(self, position_list: list, **kwargs) -> CanvasPath:
         path = CanvasPath(self, position_list, **kwargs)
         path.draw()
         self.canvas_path_list.append(path)
         return path
 
-    def delete(self, map_object):
+    def delete(self, map_object: any):
         if isinstance(map_object, CanvasPath):
             map_object.delete()
             if map_object in self.canvas_path_list:
@@ -350,7 +381,7 @@ class TkinterMapView(tkinter.Frame):
                 for key in keys_to_delete:
                     del self.tile_image_cache[key]
 
-    def request_image(self, zoom, x, y, db_cursor=None):
+    def request_image(self, zoom: int, x: int, y: int, db_cursor=None) -> ImageTk.PhotoImage:
 
         # if database is available check first if tile is in database, if not try to use server
         if db_cursor is not None:
@@ -399,7 +430,7 @@ class TkinterMapView(tkinter.Frame):
             self.tile_image_cache[f"{zoom}{x}{y}"] = image_tk
             return image_tk
 
-        except PIL.UnidentifiedImageError:
+        except PIL.UnidentifiedImageError:  # image does not exist for given coordinates
             self.tile_image_cache[f"{zoom}{x}{y}"] = self.empty_tile_image
             return self.empty_tile_image
 
@@ -409,14 +440,13 @@ class TkinterMapView(tkinter.Frame):
         except Exception:
             return self.empty_tile_image
 
-    def get_tile_image_from_cache(self, zoom, x, y):
+    def get_tile_image_from_cache(self, zoom: int, x: int, y: int):
         if f"{zoom}{x}{y}" not in self.tile_image_cache:
             return False
         else:
             return self.tile_image_cache[f"{zoom}{x}{y}"]
 
     def load_images_background(self):
-
         if self.database_path is not None:
             db_connection = sqlite3.connect(self.database_path)
             db_cursor = db_connection.cursor()
@@ -463,7 +493,7 @@ class TkinterMapView(tkinter.Frame):
         # from the main GUI thread, because tkinter can only be updated from the main thread.
         self.after(10, self.update_canvas_tile_images)
 
-    def insert_row(self, insert, y_name_position):
+    def insert_row(self, insert: int, y_name_position: int):
 
         for x_pos in range(len(self.canvas_tile_array)):
             tile_name_position = self.canvas_tile_array[x_pos][0].tile_name_position[0], y_name_position
@@ -479,7 +509,7 @@ class TkinterMapView(tkinter.Frame):
 
             self.canvas_tile_array[x_pos].insert(insert, canvas_tile)
 
-    def insert_column(self, insert, x_name_position):
+    def insert_column(self, insert: int, x_name_position: int):
         canvas_tile_column = []
 
         for y_pos in range(len(self.canvas_tile_array[0])):
@@ -603,6 +633,7 @@ class TkinterMapView(tkinter.Frame):
                             del self.canvas_tile_array[-1][y]
                         del self.canvas_tile_array[-1]
 
+            # draw all canvas tiles
             for x_pos in range(len(self.canvas_tile_array)):
                 for y_pos in range(len(self.canvas_tile_array[0])):
                     self.canvas_tile_array[x_pos][y_pos].draw()
@@ -613,6 +644,7 @@ class TkinterMapView(tkinter.Frame):
             for path in self.canvas_path_list:
                 path.draw(move=not called_after_zoom)
 
+            # update pre-cache position
             self.pre_cache_position = (round((self.upper_left_tile_pos[0] + self.lower_right_tile_pos[0]) / 2),
                                        round((self.upper_left_tile_pos[1] + self.lower_right_tile_pos[1]) / 2))
 
@@ -676,8 +708,9 @@ class TkinterMapView(tkinter.Frame):
         self.draw_move()
 
     def mouse_click(self, event):
-        print("mouseclick", event.x, event.y)
         self.fading_possible = False
+
+        self.mouse_click_position = (event.x, event.y)
 
         # save mouse position where mouse is pressed down for moving
         self.last_mouse_down_position = (event.x, event.y)
@@ -687,7 +720,16 @@ class TkinterMapView(tkinter.Frame):
         self.fading_possible = True
         self.last_move_time = time.time()
 
-        self.after(1, self.fading_move)
+        # check if mouse moved after mouse click event
+        if self.mouse_click_position == (event.x, event.y):
+            # mouse didn't move
+            if self.map_click_callback is not None:
+                # get decimal coords of current mouse position
+                coordinate_mouse_pos = self.convert_canvas_coords_to_decimal_coords(event.x, event.y)
+                self.map_click_callback(coordinate_mouse_pos)
+        else:
+            # mouse was moved, start fading animation
+            self.after(1, self.fading_move)
 
     def fading_move(self):
         delta_t = time.time() - self.last_move_time
@@ -722,14 +764,14 @@ class TkinterMapView(tkinter.Frame):
             if abs(self.move_velocity[0]) > 1 or abs(self.move_velocity[1]) > 1:
                 self.after(1, self.fading_move)
 
-    def set_zoom(self, zoom, relative_pointer_x=0.5, relative_pointer_y=0.5):
+    def set_zoom(self, zoom: int, relative_pointer_x: float = 0.5, relative_pointer_y: float = 0.5):
 
         mouse_tile_pos_x = self.upper_left_tile_pos[0] + (self.lower_right_tile_pos[0] - self.upper_left_tile_pos[0]) * relative_pointer_x
         mouse_tile_pos_y = self.upper_left_tile_pos[1] + (self.lower_right_tile_pos[1] - self.upper_left_tile_pos[1]) * relative_pointer_y
 
-        current_deg_mouse_position = num2deg(mouse_tile_pos_x,
-                                             mouse_tile_pos_y,
-                                             round(self.zoom))
+        current_deg_mouse_position = osm_to_decimal(mouse_tile_pos_x,
+                                                    mouse_tile_pos_y,
+                                                    round(self.zoom))
 
         self.zoom = zoom
 
@@ -738,7 +780,7 @@ class TkinterMapView(tkinter.Frame):
         if self.zoom < self.min_zoom:
             self.zoom = self.min_zoom
 
-        current_tile_mouse_position = deg2num(*current_deg_mouse_position, round(self.zoom))
+        current_tile_mouse_position = decimal_to_osm(*current_deg_mouse_position, round(self.zoom))
 
         self.upper_left_tile_pos = (current_tile_mouse_position[0] - relative_pointer_x * (self.width / self.tile_size),
                                     current_tile_mouse_position[1] - relative_pointer_y * (self.height / self.tile_size))

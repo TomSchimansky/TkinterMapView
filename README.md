@@ -137,9 +137,9 @@ path_1 = map_widget.set_path([marker_2.position, marker_3.position, (52.57, 13.4
 # path_1.delete()
 ````
 ---
-### Right click menu on map
+### Mouse events on the map
 
-When click on the map with the right mouse button, a menu pops up, where you can view the
+When you click on the map with the right mouse button, a menu pops up, where you can view the
 current decimal coordinates and copy them into the clipboard by clicking them.
 You can also add other options to this menu, with the ``map_widget.add_right_click_menu_command`` method:
 ```python
@@ -155,8 +155,48 @@ map_widget.add_right_click_menu_command(label="Add Marker",
 With the `label` argument you set the text inside the menu, and if `pass_coords`
 is True, the clicked coordinates will be passed to the command function as a tuple. 
 
-
 <img src="documentation_images/right_click_menu_example.png" width="400"/>
+
+You can also assign a callback function for a left click event on the map with:
+```python
+def left_click_event(coordinates_tuple):
+    print("Left click event with coordinates:", coordinates_tuple)
+    
+map_widget.add_left_click_map_command(left_click_event)
+```
+The callback function will get the decimal coordinates of the clicked location as a tuple.
+
+---
+### Utility methods of the map widget
+
+The following methods can be useful when working with coordinates and address strings,
+they all use the geocoder library with the OSM provider: https://geocoder.readthedocs.io/providers/OpenStreetMap.html:
+
+Convert decimal coords to address object:
+```python
+adr = tkintermapview.convert_coordinates_to_address(51.5122057, -0.0994014)
+print(adr.street, adr.housenumber, adr.postal, adr.city, adr.state, adr.country, adr.latlng)
+# Output: Knightrider Street None EC4 City of London England United Kingdom [51.512284050000005, -0.09981746110011651]
+```
+Convert decimal coords to city name:
+
+```python
+city = tkintermapview.convert_coordinates_to_city(51.5122057, -0.0994014)
+# city: "City of London"
+```
+
+Convert decimal coords to country name:
+```python
+country = tkintermapview.convert_coordinates_to_city(51.5122057, -0.0994014)
+# country: "United Kingdom"
+```
+
+Convert address string to decimal coords:
+
+```python
+address = tkintermapview.convert_address_to_coordinates("London")
+# address: (51.5073219, -0.1276474)
+```
 
 ---
 ### Use other tile servers

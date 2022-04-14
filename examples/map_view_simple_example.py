@@ -1,5 +1,5 @@
 import tkinter
-from tkintermapview import TkinterMapView
+import tkintermapview
 
 # create tkinter window
 root_tk = tkinter.Tk()
@@ -7,7 +7,7 @@ root_tk.geometry(f"{1000}x{700}")
 root_tk.title("map_view_simple_example.py")
 
 # create map widget
-map_widget = TkinterMapView(root_tk, width=1000, height=700, corner_radius=0)
+map_widget = tkintermapview.TkinterMapView(root_tk, width=1000, height=700, corner_radius=0)
 map_widget.pack(fill="both", expand=True)
 
 # set other tile server (standard is OpenStreetMap)
@@ -36,5 +36,8 @@ path_1 = map_widget.set_path([marker_2.position, marker_3.position, (52.568, 13.
 # path_1.add_position(...)
 # path_1.remove_position(...)
 # path_1.delete()
+
+r = tkintermapview.convert_address_to_coordinates("London")
+print(r)
 
 root_tk.mainloop()
