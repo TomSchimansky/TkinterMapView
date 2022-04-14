@@ -138,11 +138,15 @@ class TkinterMapView(tkinter.Frame):
         coordinate_mouse_pos = num2deg(tile_mouse_x, tile_mouse_y, round(self.zoom))
 
         def click_coordinates_event():
-            xerox.copy(f"{coordinate_mouse_pos[0]:.7f} {coordinate_mouse_pos[1]:.7f}")
             try:
+                xerox.copy(f"{coordinate_mouse_pos[0]:.7f} {coordinate_mouse_pos[1]:.7f}")
                 tkinter.messagebox.showinfo(title="", message="Coordinates copied to clipboard!")
+
             except Exception:
-                pass
+                if sys.platform.startswith("linux"):
+                    tkinter.messagebox.showinfo(title="", message="Error copying to clipboard.\nTry install xclip:\n'sudo apt-get install xclip'")
+                else:
+                    tkinter.messagebox.showinfo(title="", message="Error copying to clipboard.")
 
         m = tkinter.Menu(self, tearoff=0)
         m.add_command(label=f"{coordinate_mouse_pos[0]:.7f} {coordinate_mouse_pos[1]:.7f}",
