@@ -123,7 +123,7 @@ by `image_zoom_visibility`, which is tuple like the following (min_zoom, max_zoo
 The image can also be hidden by calling: `marker.hide_image(True)` or `marker.hide_image(False)`.
 To check if the image is currently hidden you can access: `marker.image_hidden` which is True or False.
 
-<img src="ocumentation_images/marker_with_image.png" width="600"/>
+<img src="documentation_images/marker_with_image.png" width="500"/>
 
 
 ---
