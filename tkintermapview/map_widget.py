@@ -82,6 +82,8 @@ class TkinterMapView(tkinter.Frame):
         self.canvas.bind("<Button-1>", self.mouse_click)
         self.canvas.bind("<ButtonRelease-1>", self.mouse_release)
         self.canvas.bind("<MouseWheel>", self.mouse_zoom)
+        self.canvas.bind("<Button-4>", self.mouse_zoom)
+        self.canvas.bind("<Button-5>", self.mouse_zoom)
         self.bind('<Configure>', self.update_dimensions)
         self.last_mouse_down_position = None
         self.last_mouse_down_time = None
@@ -203,7 +205,7 @@ class TkinterMapView(tkinter.Frame):
 
             except Exception as err:
                 if sys.platform.startswith("linux"):
-                    tkinter.messagebox.showinfo(title="", message="Error copying to clipboard.\n" + str(err) + "\nTry to install xclip:\n'sudo apt-get install xclip'")
+                    tkinter.messagebox.showinfo(title="", message="Error copying to clipboard.\n" + str(err) + "\n\nTry to install xclip:\n'sudo apt-get install xclip'")
                 else:
                     tkinter.messagebox.showinfo(title="", message="Error copying to clipboard.\n" + str(err))
 
@@ -799,8 +801,12 @@ class TkinterMapView(tkinter.Frame):
 
         if sys.platform == "darwin":
             new_zoom = self.zoom + event.delta * 0.1
-        elif "win" in sys.platform:
+        elif sys.platform.startswith("win"):
             new_zoom = self.zoom + event.delta * 0.01
+        elif event.num == 4:
+            new_zoom = self.zoom + 1
+        elif event.num == 5:
+            new_zoom = self.zoom - 1
         else:
             new_zoom = self.zoom + event.delta * 0.1
 
