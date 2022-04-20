@@ -13,6 +13,7 @@ import pyperclip
 import geocoder
 from PIL import Image, ImageTk
 from typing import Callable
+from functools import partial
 
 from .canvas_position_marker import CanvasPositionMarker
 from .canvas_tile import CanvasTile
@@ -217,8 +218,10 @@ class TkinterMapView(tkinter.Frame):
             m.add_separator()
 
         for command in self.right_click_menu_commands:
-            command_callback = lambda: command["command"](coordinate_mouse_pos) if command["pass_coords"] else command["command"]
-            m.add_command(label=command["label"], command=command_callback)
+            if command["pass_coords"]:
+                m.add_command(label=command["label"], command=partial(command["command"], coordinate_mouse_pos))
+            else:
+                m.add_command(label=command["label"], command=command["command"])
 
         m.tk_popup(event.x_root, event.y_root)  # display menu
 
