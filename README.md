@@ -39,7 +39,7 @@ https://pypi.org/project/tkintermapview/
 - [Set position with marker](#set-position-with-marker)
 - [Create position markers](#create-position-markers)
 - [Create path from position list](#create-path-from-position-list)
-- [Create polygon from position list](#create-polygon-from-position list)
+- [Create polygon from position list](#create-polygon-from-position-list)
 - [Mouse events on the map](#mouse-events-on-the-map)
 - [Utility methods](#utility-methods)
 - [Use other tile servers](#use-other-tile-servers)
