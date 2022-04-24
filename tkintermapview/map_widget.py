@@ -12,7 +12,7 @@ import sqlite3
 import pyperclip
 import geocoder
 from PIL import Image, ImageTk
-from typing import Callable
+from typing import Callable, List, Dict, Union
 from functools import partial
 
 from .canvas_position_marker import CanvasPositionMarker
@@ -20,6 +20,7 @@ from .canvas_tile import CanvasTile
 from .utility_functions import decimal_to_osm, osm_to_decimal
 from .canvas_button import CanvasButton
 from .canvas_path import CanvasPath
+from .canvas_polygon import CanvasPolygon
 
 
 class TkinterMapView(tkinter.Frame):
@@ -86,15 +87,15 @@ class TkinterMapView(tkinter.Frame):
         self.canvas.bind("<Button-4>", self.mouse_zoom)
         self.canvas.bind("<Button-5>", self.mouse_zoom)
         self.bind('<Configure>', self.update_dimensions)
-        self.last_mouse_down_position = None
-        self.last_mouse_down_time = None
-        self.mouse_click_position = None
-        self.map_click_callback = None  # callback function for left click on map
+        self.last_mouse_down_position: Union[tuple, None] = None
+        self.last_mouse_down_time: Union[float, None] = None
+        self.mouse_click_position: Union[tuple, None] = None
+        self.map_click_callback: Union[Callable, None] = None  # callback function for left click on map
 
         # movement fading
         self.fading_possible = True
         self.move_velocity = (0, 0)
-        self.last_move_time = None
+        self.last_move_time: Union[float, None] = None
 
         # describes the tile layout
         self.zoom = 0
@@ -103,21 +104,23 @@ class TkinterMapView(tkinter.Frame):
         self.tile_size = 256  # in pixel
         self.last_zoom = self.zoom
 
-        # canvas objects and images
-        self.canvas_tile_array = []
-        self.canvas_marker_list = []
-        self.canvas_path_list = []
-        self.tile_image_cache = {}
-        self.empty_tile_image = ImageTk.PhotoImage(Image.new("RGB", (self.tile_size, self.tile_size), (190, 190, 190)))
-        self.not_loaded_tile_image = ImageTk.PhotoImage(Image.new("RGB", (self.tile_size, self.tile_size), (250, 250, 250)))
+        # canvas objects, image cache and standard empty images
+        self.canvas_tile_array: List[List[CanvasTile]] = []
+        self.canvas_marker_list: List[CanvasPositionMarker] = []
+        self.canvas_path_list: List[CanvasPath] = []
+        self.canvas_polygon_list: List[CanvasPolygon] = []
+
+        self.tile_image_cache: Dict[str, PIL.ImageTk.PhotoImage] = {}
+        self.empty_tile_image = ImageTk.PhotoImage(Image.new("RGB", (self.tile_size, self.tile_size), (190, 190, 190)))  # used for zooming and moving
+        self.not_loaded_tile_image = ImageTk.PhotoImage(Image.new("RGB", (self.tile_size, self.tile_size), (250, 250, 250)))  # only used when image not found on tile server
 
         # tile server and database
         self.tile_server = "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
         self.database_path = database_path
         self.use_database_only = use_database_only
-        self.overlay_tile_server = None
-        self.max_zoom = max_zoom
-        self.min_zoom = math.ceil(math.log2(math.ceil(self.width / self.tile_size)))
+        self.overlay_tile_server: Union[str, None] = None
+        self.max_zoom = max_zoom  # should be set according to tile server max zoom
+        self.min_zoom = math.ceil(math.log2(math.ceil(self.width / self.tile_size)))  # min zoom at which map completely fills widget
 
         # pre caching for smoother movements (load tile images into cache at a certain radius around the pre_cache_position)
         self.pre_cache_position = None
@@ -125,10 +128,10 @@ class TkinterMapView(tkinter.Frame):
         self.pre_cache_thread.start()
 
         # image loading in background threads
-        self.image_load_queue_tasks = []
-        self.image_load_queue_results = []
+        self.image_load_queue_tasks: List[tuple] = []  # task: ((zoom, x, y), canvas_tile_object)
+        self.image_load_queue_results: List[tuple] = []  # result: ((zoom, x, y), canvas_tile_object, photo_image)
         self.after(10, self.update_canvas_tile_images)
-        self.image_load_thread_pool = []
+        self.image_load_thread_pool: List[threading.Thread] = []
 
         # add background threads which load tile images from self.image_load_queue_tasks
         for i in range(25):
@@ -141,7 +144,7 @@ class TkinterMapView(tkinter.Frame):
         self.set_position(52.516268, 13.377695)  # Brandenburger Tor, Berlin
 
         # right click menu
-        self.right_click_menu_commands = []  # list of dictionaries with label: str, command: func, pass_coords: bool
+        self.right_click_menu_commands: List[dict] = []  # list of dictionaries with "label": str, "command": Callable, "pass_coords": bool
         if sys.platform == "darwin":
             self.canvas.bind("<Button-2>", self.mouse_right_click)
         else:
@@ -303,7 +306,6 @@ class TkinterMapView(tkinter.Frame):
     def set_marker(self, deg_x: float, deg_y: float, text: str = None, **kwargs) -> CanvasPositionMarker:
         marker = CanvasPositionMarker(self, (deg_x, deg_y), text=text, **kwargs)
         marker.draw()
-
         self.canvas_marker_list.append(marker)
         return marker
 
@@ -313,20 +315,18 @@ class TkinterMapView(tkinter.Frame):
         self.canvas_path_list.append(path)
         return path
 
+    def set_polygon(self, position_list: list, **kwargs) -> CanvasPolygon:
+        polygon = CanvasPolygon(self, position_list, **kwargs)
+        polygon.draw()
+        self.canvas_polygon_list.append(polygon)
+        return polygon
+
     def delete(self, map_object: any):
-        if isinstance(map_object, CanvasPath):
+        if isinstance(map_object, (CanvasPath, CanvasPositionMarker, CanvasPolygon)):
             map_object.delete()
-            if map_object in self.canvas_path_list:
-                self.canvas_path_list.remove(map_object)
-
-        elif isinstance(map_object, CanvasPositionMarker):
-            map_object.delete()
-            if map_object in self.canvas_marker_list:
-                self.canvas_marker_list.remove(map_object)
-
-        del map_object
 
     def manage_z_order(self):
+        self.canvas.lift("polygon")
         self.canvas.lift("path")
         self.canvas.lift("marker")
         self.canvas.lift("marker_image")
@@ -522,9 +522,11 @@ class TkinterMapView(tkinter.Frame):
 
             image = self.get_tile_image_from_cache(round(self.zoom), *tile_name_position)
             if image is False:
+                # image is not in image cache, load blank tile and append position to image_load_queue
                 canvas_tile = CanvasTile(self, self.not_loaded_tile_image, tile_name_position)
                 self.image_load_queue_tasks.append(((round(self.zoom), *tile_name_position), canvas_tile))
             else:
+                # image is already in cache
                 canvas_tile = CanvasTile(self, image, tile_name_position)
 
             canvas_tile.draw()
@@ -558,29 +560,35 @@ class TkinterMapView(tkinter.Frame):
 
                 image = self.get_tile_image_from_cache(round(self.zoom), *tile_name_position)
                 if image is False:
+                    # image is not in image cache, load blank tile and append position to image_load_queue
                     canvas_tile = CanvasTile(self, self.not_loaded_tile_image, tile_name_position)
                     self.image_load_queue_tasks.append(((round(self.zoom), *tile_name_position), canvas_tile))
                 else:
+                    # image is already in cache
                     canvas_tile = CanvasTile(self, image, tile_name_position)
 
                 canvas_tile_column.append(canvas_tile)
 
             self.canvas_tile_array.append(canvas_tile_column)
 
-        for marker in self.canvas_marker_list:
-            marker.draw()
-
-        for path in self.canvas_path_list:
-            path.draw()
-
+        # draw all canvas tiles
         for x_pos in range(len(self.canvas_tile_array)):
             for y_pos in range(len(self.canvas_tile_array[0])):
                 self.canvas_tile_array[x_pos][y_pos].draw()
 
+        # draw other objects on canvas
+        for marker in self.canvas_marker_list:
+            marker.draw()
+        for path in self.canvas_path_list:
+            path.draw()
+        for polygon in self.canvas_polygon_list:
+            polygon.draw()
+
+        # update pre-cache position
         self.pre_cache_position = (round((self.upper_left_tile_pos[0] + self.lower_right_tile_pos[0]) / 2),
                                    round((self.upper_left_tile_pos[1] + self.lower_right_tile_pos[1]) / 2))
 
-    def draw_move(self, called_after_zoom=False):
+    def draw_move(self, called_after_zoom: bool = False):
 
         if self.canvas_tile_array:
 
@@ -594,7 +602,7 @@ class TkinterMapView(tkinter.Frame):
                 for y_diff in range(1, math.ceil(top_y_diff)):
                     for x in range(len(self.canvas_tile_array)-1, -1, -1):
                         if len(self.canvas_tile_array[x]) > 1:
-                            self.canvas_tile_array[x][0].delete_from_canvas()
+                            self.canvas_tile_array[x][0].delete()
                             del self.canvas_tile_array[x][0]
 
             # insert or delete columns on left
@@ -607,7 +615,7 @@ class TkinterMapView(tkinter.Frame):
                 for x_diff in range(1, math.ceil(left_x_diff)):
                     if len(self.canvas_tile_array) > 1:
                         for y in range(len(self.canvas_tile_array[0]) - 1, -1, -1):
-                            self.canvas_tile_array[0][y].delete_from_canvas()
+                            self.canvas_tile_array[0][y].delete()
                             del self.canvas_tile_array[0][y]
                         del self.canvas_tile_array[0]
 
@@ -621,7 +629,7 @@ class TkinterMapView(tkinter.Frame):
                 for y_diff in range(1, math.ceil(-bottom_y_diff) + 1):
                     for x in range(len(self.canvas_tile_array)-1, -1, -1):
                         if len(self.canvas_tile_array[x]) > 1:
-                            self.canvas_tile_array[x][-1].delete_from_canvas()
+                            self.canvas_tile_array[x][-1].delete()
                             del self.canvas_tile_array[x][-1]
 
             # insert or delete columns on right
@@ -634,7 +642,7 @@ class TkinterMapView(tkinter.Frame):
                 for x_diff in range(1, math.ceil(-right_x_diff) + 1):
                     if len(self.canvas_tile_array) > 1:
                         for y in range(len(self.canvas_tile_array[-1]) - 1, -1, -1):
-                            self.canvas_tile_array[-1][y].delete_from_canvas()
+                            self.canvas_tile_array[-1][y].delete()
                             del self.canvas_tile_array[-1][y]
                         del self.canvas_tile_array[-1]
 
@@ -643,11 +651,13 @@ class TkinterMapView(tkinter.Frame):
                 for y_pos in range(len(self.canvas_tile_array[0])):
                     self.canvas_tile_array[x_pos][y_pos].draw()
 
+            # draw other objects on canvas
             for marker in self.canvas_marker_list:
                 marker.draw()
-
             for path in self.canvas_path_list:
                 path.draw(move=not called_after_zoom)
+            for polygon in self.canvas_polygon_list:
+                polygon.draw(move=not called_after_zoom)
 
             # update pre-cache position
             self.pre_cache_position = (round((self.upper_left_tile_pos[0] + self.lower_right_tile_pos[0]) / 2),
@@ -777,7 +787,6 @@ class TkinterMapView(tkinter.Frame):
         current_deg_mouse_position = osm_to_decimal(mouse_tile_pos_x,
                                                     mouse_tile_pos_y,
                                                     round(self.zoom))
-
         self.zoom = zoom
 
         if self.zoom > self.max_zoom:
@@ -799,7 +808,7 @@ class TkinterMapView(tkinter.Frame):
             self.last_zoom = round(self.zoom)
 
     def mouse_zoom(self, event):
-        relative_mouse_x = event.x / self.width
+        relative_mouse_x = event.x / self.width  # mouse pointer position on map (x=[0..1], y=[0..1])
         relative_mouse_y = event.y / self.height
 
         if sys.platform == "darwin":
@@ -831,23 +840,9 @@ class TkinterMapView(tkinter.Frame):
         self.lower_right_tile_pos = self.lower_right_tile_pos[0] + diff_x, self.lower_right_tile_pos[1] + diff_y
 
     def button_zoom_in(self):
-        relative_mouse_x = 0.5
-        relative_mouse_y = 0.5
-
-        new_zoom = self.zoom + 1
-
-        self.set_zoom(new_zoom, relative_pointer_x=relative_mouse_x, relative_pointer_y=relative_mouse_y)
+        # zoom into middle of map
+        self.set_zoom(self.zoom + 1, relative_pointer_x=0.5, relative_pointer_y=0.5)
 
     def button_zoom_out(self):
-        relative_mouse_x = 0.5
-        relative_mouse_y = 0.5
-
-        new_zoom = self.zoom - 1
-
-        self.set_zoom(new_zoom, relative_pointer_x=relative_mouse_x, relative_pointer_y=relative_mouse_y)
-
-    def config(self, *args, **kwargs):
-        self.configure(*args, **kwargs)
-
-    def configure(self, *args, **kwargs):
-        super().configure(*args, **kwargs)
+        # zoom out of middle of map
+        self.set_zoom(self.zoom - 1, relative_pointer_x=0.5, relative_pointer_y=0.5)

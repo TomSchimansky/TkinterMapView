@@ -21,7 +21,7 @@ class CanvasTile:
 
     def __del__(self):
         # if CanvasTile object gets garbage collected or deleted, delete image from canvas
-        self.delete_from_canvas()
+        self.delete()
 
     def set_image_and_position(self, image, tile_name_position):
         self.image = image
@@ -43,7 +43,7 @@ class CanvasTile:
 
         return canvas_pos_x, canvas_pos_y
 
-    def delete_from_canvas(self):
+    def delete(self):
         self.map_widget.canvas.delete(self.canvas_object)
 
     def draw(self, image_update=False):

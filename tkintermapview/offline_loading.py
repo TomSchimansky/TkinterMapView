@@ -7,7 +7,7 @@ import sys
 import math
 from PIL import Image, UnidentifiedImageError
 
-from .coordinate_convert_functions import deg2num, num2deg
+from .utility_functions import decimal_to_osm, osm_to_decimal
 
 
 class OfflineLoader:
@@ -156,8 +156,8 @@ class OfflineLoader:
 
         # loop through all zoom levels
         for zoom in range(round(zoom_a), round(zoom_b + 1)):
-            upper_left_tile_pos = deg2num(*position_a, zoom)
-            lower_right_tile_pos = deg2num(*position_b, zoom)
+            upper_left_tile_pos = decimal_to_osm(*position_a, zoom)
+            lower_right_tile_pos = decimal_to_osm(*position_b, zoom)
 
             self.lock.acquire()
             for x in range(math.floor(upper_left_tile_pos[0]), math.ceil(lower_right_tile_pos[0]) + 1):

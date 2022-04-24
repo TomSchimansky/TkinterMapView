@@ -1,17 +1,27 @@
 import tkinter
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
     from .map_widget import TkinterMapView
 
-from .coordinate_convert_functions import deg2num, num2deg
+from .utility_functions import decimal_to_osm, osm_to_decimal
 
 
 class CanvasPositionMarker:
-    def __init__(self, map_widget: "TkinterMapView", position, text=None, text_color="#652A22", font=None,
-                 marker_color_circle="#9B261E", marker_color_outside="#C5542D", command=None, image=None,
-                 image_zoom_visibility=(13, float("inf"))):
+    def __init__(self,
+                 map_widget: "TkinterMapView",
+                 position: tuple,
+                 text: str = None,
+                 text_color: str = "#652A22",
+                 font=None,
+                 marker_color_circle: str = "#9B261E",
+                 marker_color_outside: str = "#C5542D",
+                 command: Callable = None,
+                 image=None,
+                 image_zoom_visibility: tuple = (13, float("inf")),
+                 data: any = None):
+
         self.map_widget = map_widget
         self.position = position
         self.text_color = text_color
@@ -21,9 +31,9 @@ class CanvasPositionMarker:
         self.image = image
         self.image_hidden = False
         self.image_zoom_visibility = image_zoom_visibility
-        self.connection_list = []
         self.deleted = False
         self.command = command
+        self.data = data
 
         self.polygon = None
         self.big_circle = None
@@ -38,14 +48,14 @@ class CanvasPositionMarker:
         else:
             self.font = font
 
-    def __del__(self):
+    def delete(self):
+        if self in self.map_widget.canvas_marker_list:
+            self.map_widget.canvas_marker_list.remove(self)
+
         self.map_widget.canvas.delete(self.polygon, self.big_circle, self.canvas_text)
         self.polygon, self.big_circle, self.canvas_text = None, None, None
         self.deleted = True
         self.map_widget.canvas.update()
-
-    def delete(self):
-        self.__del__()
 
     def set_position(self, deg_x, deg_y):
         self.position = (deg_x, deg_y)
@@ -75,7 +85,7 @@ class CanvasPositionMarker:
             self.command(self)
 
     def get_canvas_pos(self, position):
-        tile_position = deg2num(*position, round(self.map_widget.zoom))
+        tile_position = decimal_to_osm(*position, round(self.map_widget.zoom))
 
         widget_tile_width = self.map_widget.lower_right_tile_pos[0] - self.map_widget.upper_left_tile_pos[0]
         widget_tile_height = self.map_widget.lower_right_tile_pos[1] - self.map_widget.upper_left_tile_pos[1]
@@ -132,7 +142,7 @@ class CanvasPositionMarker:
                             self.map_widget.canvas.tag_bind(self.canvas_text, "<Leave>", self.mouse_leave)
                             self.map_widget.canvas.tag_bind(self.canvas_text, "<Button-1>", self.click)
                     else:
-                        self.map_widget.canvas.coords(self.canvas_text, canvas_pos_x, canvas_pos_y - 62)
+                        self.map_widget.canvas.coords(self.canvas_text, canvas_pos_x, canvas_pos_y - 56)
                         self.map_widget.canvas.itemconfig(self.canvas_text, text=self.text)
                 else:
                     if self.canvas_text is not None:

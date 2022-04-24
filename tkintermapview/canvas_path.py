@@ -5,35 +5,38 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .map_widget import TkinterMapView
 
-from .coordinate_convert_functions import deg2num, num2deg
+from .utility_functions import decimal_to_osm, osm_to_decimal
 
 
 class CanvasPath:
-    def __init__(self, map_widget: "TkinterMapView", position_list, color="#3E69CB", command=None, name=None):
+    def __init__(self,
+                 map_widget: "TkinterMapView",
+                 position_list, color="#3E69CB",
+                 command=None,
+                 name=None,
+                 data: any = None):
+
         self.map_widget = map_widget
         self.position_list = position_list
         self.canvas_line_positions = []
-        self.connection_list = []
         self.deleted = False
 
         self.path_color = color
         self.command = command
         self.canvas_line = None
         self.name = name
+        self.data = data
 
         self.last_upper_left_tile_pos = None
         self.last_position_list_length = len(self.position_list)
 
-    def __del__(self):
+    def delete(self):
+        if self in self.map_widget.canvas_path_list:
+            self.map_widget.canvas_path_list.remove(self)
+
         self.map_widget.canvas.delete(self.canvas_line)
         self.canvas_line = None
-
-    def delete(self):
-        self.__del__()
-
-    def appear(self):
-        self.deleted = False
-        self.draw()
+        self.deleted = True
 
     def add_position(self, deg_x, deg_y, index=-1):
         if index == -1:
@@ -47,7 +50,7 @@ class CanvasPath:
         self.draw()
 
     def get_canvas_pos(self, position, widget_tile_width, widget_tile_height):
-        tile_position = deg2num(*position, round(self.map_widget.zoom))
+        tile_position = decimal_to_osm(*position, round(self.map_widget.zoom))
 
         canvas_pos_x = ((tile_position[0] - self.map_widget.upper_left_tile_pos[0]) / widget_tile_width) * self.map_widget.width
         canvas_pos_y = ((tile_position[1] - self.map_widget.upper_left_tile_pos[1]) / widget_tile_height) * self.map_widget.height

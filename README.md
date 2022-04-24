@@ -32,6 +32,20 @@ https://pypi.org/project/tkintermapview/
 
 # Documentation / Tutorial
 
+- [Importing](#Importing)
+- [Create the widget](#Create the widget)
+- [Set coordinate position](#Set coordinate position)
+- [Set address position](#Set address position)
+- [Set position with marker](#Set position with marker)
+- [Create position markers](#Create position markers)
+- [Create path from position list](#Create path from position list)
+- [Create polygon from position list](#Create polygon from position list)
+- [Mouse events on the map](#Mouse events on the map)
+- [Utility methods](#Utility methods)
+- [Use other tile servers](#Use other tile servers)
+- [Use offline tiles](#Use offline tiles)
+
+---
 ### Importing
 
 Import tkinter as normal and from tkintermapview import the TkinterMapView widget.
@@ -140,6 +154,36 @@ path_1 = map_widget.set_path([marker_2.position, marker_3.position, (52.57, 13.4
 # path_1.remove_position(...)
 # path_1.delete()
 ````
+---
+### Create polygon from position list
+
+To create a polygon on the map call the ``map_widget.set_polygon()`` function
+and pass a list of coordinate tuples from which the polygon will be created.
+You can edit the appearance with the following arguments: ``fill_color, outline_color, border_width``.
+You can also set a command function which will be called when the polygon gets clicked and
+which will get the polygon object as an argument.
+````python
+def polygon_click(polygon):
+    print(f"polygon clicked - text: {polygon.name}")
+    
+polygon_1 = map_widget.set_polygon([(46.0732306, 6.0095215),
+                                    ...
+                                    (46.3772542, 6.4160156)],
+                                   # fill_color=None,
+                                   # outline_color="red",
+                                   # border_width=12,
+                                   command=polygon_click,
+                                   name="switzerland_polygon")
+
+# polygon_1.remove_position(46.3772542, 6.4160156)
+# polygon_1.add_position(0, 0, index=5)
+# polygon_1.delete()
+````
+
+In ``examples/map_view_polygon_example.py`` you can find the full example program,
+which results in the following:
+
+![](documentation_images/map_view_polygon_example.png)
 ---
 ### Mouse events on the map
 

@@ -1,5 +1,6 @@
 import geocoder
 import math
+from typing import Union
 
 
 def decimal_to_osm(decimal_x: float, decimal_y: float, zoom: int) -> tuple:
@@ -12,7 +13,7 @@ def decimal_to_osm(decimal_x: float, decimal_y: float, zoom: int) -> tuple:
     return xtile, ytile
 
 
-def osm_to_decimal(tile_x: int, tile_y: int, zoom: int) -> tuple:
+def osm_to_decimal(tile_x: Union[int, float], tile_y: Union[int, float], zoom: int) -> tuple:
     """ converts internal OSM coordinates to decimal coordinates """
 
     n = 2.0 ** zoom
