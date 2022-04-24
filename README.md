@@ -32,18 +32,18 @@ https://pypi.org/project/tkintermapview/
 
 # Documentation / Tutorial
 
-- [Importing](#Importing)
-- [Create the widget](#Create the widget)
-- [Set coordinate position](#Set coordinate position)
-- [Set address position](#Set address position)
-- [Set position with marker](#Set position with marker)
-- [Create position markers](#Create position markers)
-- [Create path from position list](#Create path from position list)
-- [Create polygon from position list](#Create polygon from position list)
-- [Mouse events on the map](#Mouse events on the map)
-- [Utility methods](#Utility methods)
-- [Use other tile servers](#Use other tile servers)
-- [Use offline tiles](#Use offline tiles)
+- [Importing](#importing)
+- [Create the widget](#create-the-widget)
+- [Set coordinate position](#set-coordinate-position)
+- [Set address position](#set-address-position)
+- [Set position with marker](#set-position-with-marker)
+- [Create position markers](#create-position-markers)
+- [Create path from position list](#create-path-from-position-list)
+- [Create polygon from position list](#create-polygon-from-position list)
+- [Mouse events on the map](#mouse-events-on-the-map)
+- [Utility methods](#utility-methods)
+- [Use other tile servers](#use-other-tile-servers)
+- [Use offline tiles](#use-offline-tiles)
 
 ---
 ### Importing
