@@ -139,7 +139,7 @@ The image can also be hidden by calling: `marker.hide_image(True)` or `marker.hi
 To check if the image is currently hidden you can access: `marker.image_hidden` which is True or False.
 
 You can also store an object or some reference inside the marker with the ``data`` attribute, which
-can be set when creating a marker, and accessed modified with ``marker.data``. This data attribute
+can be set when creating a marker, and accessed or modified with ``marker.data``. This data attribute
 also exists for path and polygons.
 
 <img src="documentation_images/marker_with_image.png" width="500"/>

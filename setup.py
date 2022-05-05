@@ -10,7 +10,7 @@ from setuptools import setup
 #
 
 setup(name="tkintermapview",
-      version="1.10",
+      version="1.11",
       author="Tom Schimansky",
       license="Creative Commons Zero v1.0 Universal",
       url="https://github.com/TomSchimansky/TkinterMapView",
@@ -21,5 +21,5 @@ setup(name="tkintermapview",
       classifiers=["Operating System :: OS Independent",
                    "Programming Language :: Python :: 3",
                    "License :: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication"],
-      install_requires=["geocoder", "pillow", "requests", "xerox", 'pywin32; platform_system=="Windows"'],
+      install_requires=["geocoder", "pillow", "requests", "pyperclip", 'pywin32; platform_system=="Windows"', "customtkinter"],
       python_requires=">=3.6")

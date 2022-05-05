@@ -12,7 +12,7 @@ import sqlite3
 import pyperclip
 import geocoder
 from PIL import Image, ImageTk
-from typing import Callable, List, Dict, Union
+from typing import Callable, List, Dict, Union, Tuple
 from functools import partial
 
 from .canvas_position_marker import CanvasPositionMarker
@@ -45,13 +45,13 @@ class TkinterMapView(tkinter.Frame):
             # map widget is placed in a CTkFrame from customtkinter library
             if hasattr(self.master, "canvas") and hasattr(self.master, "fg_color"):
                 if type(self.master.fg_color) == tuple or type(self.master.fg_color) == list:
-                    self.bg_color = self.master.fg_color[self.master.appearance_mode]
+                    self.bg_color: str = self.master.fg_color[self.master.appearance_mode]
                 else:
-                    self.bg_color = self.master.fg_color
+                    self.bg_color: str = self.master.fg_color
 
             # map widget is placed on a tkinter.Frame or tkinter.Tk
             elif isinstance(self.master, (tkinter.Frame, tkinter.Tk, tkinter.Toplevel, tkinter.LabelFrame)):
-                self.bg_color = self.master.cget("bg")
+                self.bg_color: str = self.master.cget("bg")
 
             # map widget is placed in a ttk widget
             elif isinstance(self.master, (ttk.Frame, ttk.LabelFrame, ttk.Notebook)):
@@ -59,11 +59,11 @@ class TkinterMapView(tkinter.Frame):
                     ttk_style = ttk.Style()
                     self.bg_color = ttk_style.lookup(self.master.winfo_class(), 'background')
                 except Exception:
-                    self.bg_color = "#000000"
+                    self.bg_color: str = "#000000"
 
             # map widget is placed on an unknown widget
             else:
-                self.bg_color = "#000000"
+                self.bg_color: str = "#000000"
 
         self.grid_rowconfigure(0, weight=1)  # configure 1x1 grid system
         self.grid_columnconfigure(0, weight=1)
@@ -93,16 +93,16 @@ class TkinterMapView(tkinter.Frame):
         self.map_click_callback: Union[Callable, None] = None  # callback function for left click on map
 
         # movement fading
-        self.fading_possible = True
-        self.move_velocity = (0, 0)
+        self.fading_possible: bool = True
+        self.move_velocity: Tuple[float, float] = (0, 0)
         self.last_move_time: Union[float, None] = None
 
         # describes the tile layout
-        self.zoom = 0
-        self.upper_left_tile_pos = (0, 0)  # in OSM coords
-        self.lower_right_tile_pos = (0, 0)
-        self.tile_size = 256  # in pixel
-        self.last_zoom = self.zoom
+        self.zoom: float = 0
+        self.upper_left_tile_pos: Tuple[float, float] = (0, 0)  # in OSM coords
+        self.lower_right_tile_pos: Tuple[float, float] = (0, 0)
+        self.tile_size: int = 256  # in pixel
+        self.last_zoom: float = self.zoom
 
         # canvas objects, image cache and standard empty images
         self.canvas_tile_array: List[List[CanvasTile]] = []
@@ -120,10 +120,10 @@ class TkinterMapView(tkinter.Frame):
         self.use_database_only = use_database_only
         self.overlay_tile_server: Union[str, None] = None
         self.max_zoom = max_zoom  # should be set according to tile server max zoom
-        self.min_zoom = math.ceil(math.log2(math.ceil(self.width / self.tile_size)))  # min zoom at which map completely fills widget
+        self.min_zoom: int = math.ceil(math.log2(math.ceil(self.width / self.tile_size)))  # min zoom at which map completely fills widget
 
         # pre caching for smoother movements (load tile images into cache at a certain radius around the pre_cache_position)
-        self.pre_cache_position = None
+        self.pre_cache_position: Union[Tuple[float, float], None] = None
         self.pre_cache_thread = threading.Thread(daemon=True, target=self.pre_cache)
         self.pre_cache_thread.start()
 
