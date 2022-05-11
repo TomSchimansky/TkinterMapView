@@ -2,6 +2,9 @@ import tkinter
 import customtkinter
 from tkintermapview import TkinterMapView
 
+customtkinter.set_appearance_mode("dark")
+customtkinter.set_default_color_theme("dark-blue")
+
 
 class App(customtkinter.CTk):
 
@@ -29,17 +32,13 @@ class App(customtkinter.CTk):
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
-        self.frame_left = customtkinter.CTkFrame(master=self,
-                                                 width=150)
-        self.frame_left.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+        self.frame_left = customtkinter.CTkFrame(master=self, width=150, corner_radius=0)
+        self.frame_left.grid(row=0, column=0, padx=0, pady=0, sticky="nsew")
 
-        self.frame_right = customtkinter.CTkFrame(master=self,
-                                                  corner_radius=10)
-        self.frame_right.grid(row=0, column=1, rowspan=1, pady=20, padx=20, sticky="nsew")
+        self.frame_right = customtkinter.CTkFrame(master=self, corner_radius=0, fg_color=self.fg_color)
+        self.frame_right.grid(row=0, column=1, rowspan=1, pady=0, padx=0, sticky="nsew")
 
         # ============ frame_left ============
-
-        self.frame_left.grid_rowconfigure(0, minsize=10)
 
         self.button_1 = customtkinter.CTkButton(master=self.frame_left,
                                                 text="Set Marker",
@@ -47,7 +46,7 @@ class App(customtkinter.CTk):
                                                 width=120, height=30,
                                                 border_width=0,
                                                 corner_radius=8)
-        self.button_1.grid(pady=10, padx=20, row=3, column=0)
+        self.button_1.grid(pady=(20, 0), padx=(20, 20), row=0, column=0)
 
         self.button_2 = customtkinter.CTkButton(master=self.frame_left,
                                                 text="Clear Markers",
@@ -55,7 +54,7 @@ class App(customtkinter.CTk):
                                                 width=120, height=30,
                                                 border_width=0,
                                                 corner_radius=8)
-        self.button_2.grid(pady=10, padx=20, row=4, column=0)
+        self.button_2.grid(pady=(20, 0), padx=(20, 20), row=1, column=0)
 
         # ============ frame_right ============
 
@@ -65,8 +64,8 @@ class App(customtkinter.CTk):
         self.frame_right.grid_columnconfigure(1, weight=0)
         self.frame_right.grid_columnconfigure(2, weight=1)
 
-        self.map_widget = TkinterMapView(self.frame_right, width=450, height=250, corner_radius=9)
-        self.map_widget.grid(row=0, rowspan=1, column=0, columnspan=3, sticky="nswe", padx=20, pady=20)
+        self.map_widget = TkinterMapView(self.frame_right, corner_radius=11)
+        self.map_widget.grid(row=0, rowspan=1, column=0, columnspan=3, sticky="nswe", padx=(20, 20), pady=(20, 0))
         self.map_widget.set_address("Berlin")
 
         self.entry = customtkinter.CTkEntry(master=self.frame_right,
@@ -74,7 +73,7 @@ class App(customtkinter.CTk):
                                             width=140,
                                             height=30,
                                             corner_radius=8)
-        self.entry.grid(row=1, column=0, sticky="we", padx=20, pady=20)
+        self.entry.grid(row=1, column=0, sticky="we", padx=(20, 0), pady=20)
         self.entry.entry.bind("<Return>", self.search_event)
 
         self.button_5 = customtkinter.CTkButton(master=self.frame_right,
@@ -83,7 +82,7 @@ class App(customtkinter.CTk):
                                                 command=self.search_event,
                                                 border_width=0,
                                                 corner_radius=8)
-        self.button_5.grid(row=1, column=1, sticky="w", padx=10, pady=20)
+        self.button_5.grid(row=1, column=1, sticky="w", padx=(20, 0), pady=20)
 
         self.slider_1 = customtkinter.CTkSlider(master=self.frame_right,
                                                 width=200,
