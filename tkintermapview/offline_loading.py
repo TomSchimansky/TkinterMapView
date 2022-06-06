@@ -19,6 +19,8 @@ class OfflineLoader:
 
         if tile_server is None:
             self.tile_server = "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        else:
+            self.tile_server = tile_server
 
         self.max_zoom = max_zoom
 
