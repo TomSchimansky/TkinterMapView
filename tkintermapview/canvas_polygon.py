@@ -17,7 +17,8 @@ class CanvasPolygon:
                  border_width: int = 5,
                  command: Callable = None,
                  name: str = None,
-                 data: any = None):
+                 data: any = None,
+                 menu: any = None):
 
         self.map_widget = map_widget
         self.position_list = position_list  # list with decimal positions
@@ -26,7 +27,9 @@ class CanvasPolygon:
         self.deleted = False
 
         self.name = name
+        self.menu = menu
         self.data = data
+        self.mouse_over = False
         self.outline_color = outline_color
         self.fill_color = fill_color  # can also be None for transparent fill
         self.border_width = border_width
@@ -56,6 +59,7 @@ class CanvasPolygon:
         self.draw()
 
     def mouse_enter(self, event=None):
+        self.mouse_over = True
         if sys.platform == "darwin":
             self.map_widget.canvas.config(cursor="pointinghand")
         elif sys.platform.startswith("win"):
@@ -64,11 +68,22 @@ class CanvasPolygon:
             self.map_widget.canvas.config(cursor="hand2")  # not tested what it looks like on Linux!
 
     def mouse_leave(self, event=None):
+        self.mouse_over = False
         self.map_widget.canvas.config(cursor="arrow")
 
     def click(self, event=None):
         if self.command is not None:
             self.command(self)
+
+    def click_right(self, event=None):
+        if self.menu is not None:
+            m = tkinter.Menu(self.map_widget, tearoff=0)
+            for title, cmd in self.menu.items():
+                if title == '-':
+                    m.add_separator()
+                    continue
+                m.add_command(label=f"{title}", command=cmd)
+            m.tk_popup(event.x_root, event.y_root)  # display menu
 
     def get_canvas_pos(self, position, widget_tile_width, widget_tile_height):
         tile_position = decimal_to_osm(*position, round(self.map_widget.zoom))
@@ -120,6 +135,10 @@ class CanvasPolygon:
                     self.map_widget.canvas.tag_bind(self.canvas_polygon, "<Enter>", self.mouse_enter)
                     self.map_widget.canvas.tag_bind(self.canvas_polygon, "<Leave>", self.mouse_leave)
                     self.map_widget.canvas.tag_bind(self.canvas_polygon, "<Button-1>", self.click)
+                    if sys.platform == "darwin":
+                        self.map_widget.canvas.tag_bind(self.canvas_polygon, "<Button-2>", self.click_right)
+                    else:
+                        self.map_widget.canvas.tag_bind(self.canvas_polygon, "<Button-3>", self.click_right)
             else:
                 self.map_widget.canvas.coords(self.canvas_polygon, self.canvas_polygon_positions)
         else:

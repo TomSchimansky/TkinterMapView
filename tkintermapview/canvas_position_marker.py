@@ -20,7 +20,8 @@ class CanvasPositionMarker:
                  command: Callable = None,
                  image=None,
                  image_zoom_visibility: tuple = (13, float("inf")),
-                 data: any = None):
+                 data: any = None,
+                 menu: any = None):
 
         self.map_widget = map_widget
         self.position = position
@@ -33,7 +34,9 @@ class CanvasPositionMarker:
         self.image_zoom_visibility = image_zoom_visibility
         self.deleted = False
         self.command = command
+        self.menu = menu
         self.data = data
+        self.mouse_over = False
 
         self.polygon = None
         self.big_circle = None
@@ -70,6 +73,7 @@ class CanvasPositionMarker:
         self.draw()
 
     def mouse_enter(self, event=None):
+        self.mouse_over = True
         if sys.platform == "darwin":
             self.map_widget.canvas.config(cursor="pointinghand")
         elif sys.platform.startswith("win"):
@@ -78,11 +82,22 @@ class CanvasPositionMarker:
             self.map_widget.canvas.config(cursor="hand2")  # not tested what it looks like on Linux!
 
     def mouse_leave(self, event=None):
+        self.mouse_over = False
         self.map_widget.canvas.config(cursor="arrow")
 
     def click(self, event=None):
         if self.command is not None:
             self.command(self)
+
+    def click_right(self, event=None):
+        if self.menu is not None:
+            m = tkinter.Menu(self.map_widget, tearoff=0)
+            for title, cmd in self.menu.items():
+                if title == '-':
+                    m.add_separator()
+                    continue
+                m.add_command(label=f"{title}", command=cmd)
+            m.tk_popup(event.x_root, event.y_root)  # display menu
 
     def get_canvas_pos(self, position):
         tile_position = decimal_to_osm(*position, round(self.map_widget.zoom))
@@ -110,6 +125,10 @@ class CanvasPositionMarker:
                         self.map_widget.canvas.tag_bind(self.polygon, "<Enter>", self.mouse_enter)
                         self.map_widget.canvas.tag_bind(self.polygon, "<Leave>", self.mouse_leave)
                         self.map_widget.canvas.tag_bind(self.polygon, "<Button-1>", self.click)
+                        if sys.platform == "darwin":
+                            self.map_widget.canvas.tag_bind(self.polygon, "<Button-2>", self.click_right)
+                        else:
+                            self.map_widget.canvas.tag_bind(self.polygon, "<Button-3>", self.click_right)
                 else:
                     self.map_widget.canvas.coords(self.polygon,
                                                   canvas_pos_x - 14, canvas_pos_y - 23,
@@ -124,6 +143,10 @@ class CanvasPositionMarker:
                         self.map_widget.canvas.tag_bind(self.big_circle, "<Enter>", self.mouse_enter)
                         self.map_widget.canvas.tag_bind(self.big_circle, "<Leave>", self.mouse_leave)
                         self.map_widget.canvas.tag_bind(self.big_circle, "<Button-1>", self.click)
+                        if sys.platform == "darwin":
+                            self.map_widget.canvas.tag_bind(self.big_circle, "<Button-2>", self.click_right)
+                        else:
+                            self.map_widget.canvas.tag_bind(self.big_circle, "<Button-3>", self.click_right)
                 else:
                     self.map_widget.canvas.coords(self.big_circle,
                                                   canvas_pos_x - 14, canvas_pos_y - 45,
@@ -141,6 +164,10 @@ class CanvasPositionMarker:
                             self.map_widget.canvas.tag_bind(self.canvas_text, "<Enter>", self.mouse_enter)
                             self.map_widget.canvas.tag_bind(self.canvas_text, "<Leave>", self.mouse_leave)
                             self.map_widget.canvas.tag_bind(self.canvas_text, "<Button-1>", self.click)
+                            if sys.platform == "darwin":
+                                self.map_widget.canvas.tag_bind(self.canvas_text, "<Button-2>", self.click_right)
+                            else:
+                                self.map_widget.canvas.tag_bind(self.canvas_text, "<Button-3>", self.click_right)
                     else:
                         self.map_widget.canvas.coords(self.canvas_text, canvas_pos_x, canvas_pos_y - 56)
                         self.map_widget.canvas.itemconfig(self.canvas_text, text=self.text)
