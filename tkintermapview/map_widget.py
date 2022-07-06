@@ -45,7 +45,7 @@ class TkinterMapView(tkinter.Frame):
             # map widget is placed in a CTkFrame from customtkinter library
             if hasattr(self.master, "canvas") and hasattr(self.master, "fg_color"):
                 if type(self.master.fg_color) == tuple or type(self.master.fg_color) == list:
-                    self.bg_color: str = self.master.fg_color[self.master.appearance_mode]
+                    self.bg_color: str = self.master.fg_color[self.master._appearance_mode]
                 else:
                     self.bg_color: str = self.master.fg_color
 
