@@ -56,7 +56,8 @@ class CanvasTile:
                 self.canvas_object = self.map_widget.canvas.create_image(canvas_pos_x,
                                                                          canvas_pos_y,
                                                                          image=self.image,
-                                                                         anchor=tkinter.NW)
+                                                                         anchor=tkinter.NW,
+                                                                         tags="tile")
         else:
             self.map_widget.canvas.coords(self.canvas_object, canvas_pos_x, canvas_pos_y)
 

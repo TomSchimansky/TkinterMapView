@@ -232,10 +232,14 @@ class TkinterMapView(tkinter.Frame):
         self.overlay_tile_server = overlay_server
 
     def set_tile_server(self, tile_server: str, tile_size: int = 256, max_zoom: int = 19):
+        self.image_load_queue_tasks = []
         self.max_zoom = max_zoom
         self.tile_size = tile_size
         self.min_zoom = math.ceil(math.log2(math.ceil(self.width / self.tile_size)))
         self.tile_server = tile_server
+        self.tile_image_cache: Dict[str, PIL.ImageTk.PhotoImage] = {}
+        self.canvas.delete("tile")
+        self.image_load_queue_results = []
         self.draw_initial_array()
 
     def get_position(self) -> tuple:
@@ -417,7 +421,7 @@ class TkinterMapView(tkinter.Frame):
         # try to get the tile from the server
         try:
             url = self.tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
-            image = Image.open(requests.get(url, stream=True).raw)
+            image = Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).raw)
 
             if self.overlay_tile_server is not None:
                 url = self.overlay_tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))

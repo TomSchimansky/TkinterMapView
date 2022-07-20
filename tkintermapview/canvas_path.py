@@ -11,7 +11,8 @@ from .utility_functions import decimal_to_osm, osm_to_decimal
 class CanvasPath:
     def __init__(self,
                  map_widget: "TkinterMapView",
-                 position_list, color="#3E69CB",
+                 position_list,
+                 color="#3E69CB",
                  command=None,
                  name=None,
                  data: any = None):
