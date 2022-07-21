@@ -15,7 +15,8 @@ class CanvasPath:
                  color="#3E69CB",
                  command=None,
                  name=None,
-                 data: any = None):
+                 data: any = None,
+                 menu: any = None):
 
         self.map_widget = map_widget
         self.position_list = position_list
@@ -26,7 +27,9 @@ class CanvasPath:
         self.command = command
         self.canvas_line = None
         self.name = name
+        self.menu = menu
         self.data = data
+        self.mouse_over = False
 
         self.last_upper_left_tile_pos = None
         self.last_position_list_length = len(self.position_list)
@@ -59,6 +62,7 @@ class CanvasPath:
         return canvas_pos_x, canvas_pos_y
 
     def mouse_enter(self, event=None):
+        self.mouse_over = True
         if sys.platform == "darwin":
             self.map_widget.canvas.config(cursor="pointinghand")
         elif sys.platform.startswith("win"):
@@ -67,11 +71,22 @@ class CanvasPath:
             self.map_widget.canvas.config(cursor="hand2")  # not tested what it looks like on Linux!
 
     def mouse_leave(self, event=None):
+        self.mouse_over = False
         self.map_widget.canvas.config(cursor="arrow")
 
     def click(self, event=None):
         if self.command is not None:
             self.command(self)
+
+    def click_right(self, event=None):
+        if self.menu is not None:
+            m = tkinter.Menu(self.map_widget, tearoff=0)
+            for title, cmd in self.menu.items():
+                if title == '-':
+                    m.add_separator()
+                    continue
+                m.add_command(label=f"{title}", command=cmd)
+            m.tk_popup(event.x_root, event.y_root)  # display menu
 
     def draw(self, move=False):
         new_line_length = self.last_position_list_length != len(self.position_list)
@@ -106,6 +121,10 @@ class CanvasPath:
                     self.map_widget.canvas.tag_bind(self.canvas_line, "<Enter>", self.mouse_enter)
                     self.map_widget.canvas.tag_bind(self.canvas_line, "<Leave>", self.mouse_leave)
                     self.map_widget.canvas.tag_bind(self.canvas_line, "<Button-1>", self.click)
+                    if sys.platform == "darwin":
+                        self.map_widget.canvas.tag_bind(self.canvas_line, "<Button-2>", self.click_right)
+                    else:
+                        self.map_widget.canvas.tag_bind(self.canvas_line, "<Button-3>", self.click_right)
             else:
                 self.map_widget.canvas.coords(self.canvas_line, self.canvas_line_positions)
         else:

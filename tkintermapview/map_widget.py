@@ -202,6 +202,12 @@ class TkinterMapView(tkinter.Frame):
     def mouse_right_click(self, event):
         coordinate_mouse_pos = self.convert_canvas_coords_to_decimal_coords(event.x, event.y)
 
+        # check if mouse is over a marker with menu
+        for m in self.canvas_marker_list + self.canvas_path_list + self.canvas_polygon_list:
+            if m.mouse_over and m.menu:
+                # don't show right click menu of map
+                return
+
         def click_coordinates_event():
             try:
                 pyperclip.copy(f"{coordinate_mouse_pos[0]:.7f} {coordinate_mouse_pos[1]:.7f}")
