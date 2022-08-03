@@ -816,9 +816,9 @@ class TkinterMapView(tkinter.Frame):
         relative_mouse_y = event.y / self.height
 
         if sys.platform == "darwin":
-            new_zoom = self.zoom + event.delta * 0.1
+            new_zoom = self.zoom + int(event.delta * 0.1)
         elif sys.platform.startswith("win"):
-            new_zoom = self.zoom + event.delta * 0.01
+            new_zoom = self.zoom + int(event.delta * 0.01)
         elif event.num == 4:
             new_zoom = self.zoom + 1
         elif event.num == 5:
