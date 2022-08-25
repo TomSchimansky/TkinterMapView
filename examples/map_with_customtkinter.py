@@ -91,7 +91,6 @@ class App(customtkinter.CTk):
 
     def search_event(self, event=None):
         self.map_widget.set_address(self.entry.get())
-        self.slider_1.set(self.map_widget.zoom)
 
     def set_marker_event(self):
         current_position = self.map_widget.get_position()

@@ -7,7 +7,6 @@ from setuptools import setup
 # 3. python3.10 -m pip install --upgrade build
 # 4. python3.10 -m build
 # 5. python3.10 -m twine upload dist/*
-#
 
 setup(name="tkintermapview",
       version="1.13",
