@@ -64,6 +64,8 @@ class TkinterMapView(tkinter.Frame):
             # map widget is placed on an unknown widget
             else:
                 self.bg_color: str = "#000000"
+        else:
+            self.bg_color = bg_color
 
         self.grid_rowconfigure(0, weight=1)  # configure 1x1 grid system
         self.grid_columnconfigure(0, weight=1)
