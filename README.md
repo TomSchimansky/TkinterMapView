@@ -126,7 +126,7 @@ marker_3 = map_widget.set_marker(52.55, 13.4, text="52.55, 13.4")
 # marker_3.delete()
 ```
 A marker can be also customized by passing the following arguments to .set_marker(),
-.set_address() or .set_position(): `text, font, image (PhotoImage), image_zoom_visibility,
+.set_address() or .set_position(): `text, font, icon, icon_anchor, image (PhotoImage), image_zoom_visibility,
 marker_color_circle, marker_color_outside, text_color, command`.
 
 The command function will be called when the marker is clicked and will
@@ -141,6 +141,13 @@ To check if the image is currently hidden you can access: `marker.image_hidden` 
 You can also store an object or some reference inside the marker with the ``data`` attribute, which
 can be set when creating a marker, and accessed or modified with ``marker.data``. This data attribute
 also exists for path and polygons.
+
+With the `icon` attribute you can pass a PIL.ImageTk.PhotoImage object to a marker, which will be
+displayed instead of the standard location icon. With `icon_anchor` you can specify the anchor
+for the icon image, corresponding to the position of the marker, standard is center, where the icon
+image is centered over the marker position. With the `.change_icon(new_icon)` method you can change
+the icon image later, but only if the marker already has an icon image from the beginning.
+In ``examples/map_view_marker_icon_images.py`` you can find example code for the ``icon`` attributes.
 
 <img src="documentation_images/marker_with_image.png" width="500"/>
 
