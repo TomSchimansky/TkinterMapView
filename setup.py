@@ -9,7 +9,7 @@ from setuptools import setup
 # 5. python3.10 -m twine upload dist/*
 
 setup(name="tkintermapview",
-      version="1.16",
+      version="1.17",
       author="Tom Schimansky",
       license="Creative Commons Zero v1.0 Universal",
       url="https://github.com/TomSchimansky/TkinterMapView",
