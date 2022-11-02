@@ -147,7 +147,7 @@ also exists for path and polygons.
 
 With the `icon` attribute you can pass a PIL.ImageTk.PhotoImage object to a marker, which will be
 displayed instead of the standard location icon. With `icon_anchor` you can specify the anchor
-for the icon image, corresponding to the position of the marker, standard is center, where the icon
+for the icon image (center, n, nw, w, sw, s, ew, e, ne), corresponding to the position of the marker, standard is center, where the icon
 image is centered over the marker position. With the `.change_icon(new_icon)` method you can change
 the icon image later, but only if the marker already has an icon image from the beginning.
 In ``examples/map_view_marker_icon_images.py`` you can find example code for the ``icon`` attributes.
