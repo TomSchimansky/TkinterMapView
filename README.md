@@ -19,10 +19,7 @@ For example by using the [CustomTkinter](https://github.com/TomSchimansky/Custom
 which provides rounded buttons and frames in a light and dark mode:
 
 
-
-
-https://user-images.githubusercontent.com/66446067/199612485-bbc3412a-36cb-4361-95bc-cd3c3184fa4a.mp4
-
+https://user-images.githubusercontent.com/66446067/199613538-6be7bc5c-c88b-42d7-8cf5-a9ed2b011fa4.mp4
 
 | _`examples/map_with_customtkinter.py` on macOS
 
