@@ -161,6 +161,9 @@ In ``examples/map_view_marker_icon_images.py`` you can find example code for the
 You can also create a path which connects multiple markers or completely new positions.
 You pass a list with position tuples to the function `set_path` and get back a path object.
 The path object can be modified by adding a new position or remove a specific position.
+The `set_path` method accepts the following arguments: `position_list`, `color`, `command` (on click),
+`name` (string for identification), `width`, `data (anything can be stored in the path object).
+
 ````python
 # set a path
 path_1 = map_widget.set_path([marker_2.position, marker_3.position, (52.57, 13.4), (52.55, 13.35)])
