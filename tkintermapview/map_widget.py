@@ -64,6 +64,8 @@ class TkinterMapView(tkinter.Frame):
             # map widget is placed on an unknown widget
             else:
                 self.bg_color: str = "#000000"
+        else:
+            self.bg_color = bg_color
 
         self.grid_rowconfigure(0, weight=1)  # configure 1x1 grid system
         self.grid_columnconfigure(0, weight=1)
@@ -425,7 +427,7 @@ class TkinterMapView(tkinter.Frame):
 
             if self.overlay_tile_server is not None:
                 url = self.overlay_tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
-                image_overlay = Image.open(requests.get(url, stream=True).raw)
+                image_overlay = Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).raw)
                 image = image.convert("RGBA")
                 image_overlay = image_overlay.convert("RGBA")
 

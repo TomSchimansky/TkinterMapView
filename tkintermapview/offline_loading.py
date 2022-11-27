@@ -68,7 +68,7 @@ class OfflineLoader:
 
                     try:
                         url = self.tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
-                        image_data = requests.get(url, stream=True).content
+                        image_data = requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).content
 
                         self.lock.acquire()
                         self.result_queue.append((zoom, x, y, self.tile_server, image_data))

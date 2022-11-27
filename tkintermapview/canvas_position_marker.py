@@ -18,7 +18,9 @@ class CanvasPositionMarker:
                  marker_color_circle: str = "#9B261E",
                  marker_color_outside: str = "#C5542D",
                  command: Callable = None,
-                 image=None,
+                 image: tkinter.PhotoImage = None,
+                 icon: tkinter.PhotoImage = None,
+                 icon_anchor: str = "center",
                  image_zoom_visibility: tuple = (0, float("inf")),
                  data: any = None,
                  range: float = None):
@@ -29,7 +31,10 @@ class CanvasPositionMarker:
         self.marker_color_circle = marker_color_circle
         self.marker_color_outside = marker_color_outside
         self.text = text
+        self.text_y_offset = 0  # vertical offset pf text from marker position in px
         self.image = image
+        self.icon = icon
+        self.icon_anchor = icon_anchor  # can be center, n, nw, w, sw, s, ew, e, ne
         self.image_hidden = False
         self.image_zoom_visibility = image_zoom_visibility
         self.deleted = False
@@ -52,6 +57,21 @@ class CanvasPositionMarker:
         else:
             self.font = font
 
+        self.calculate_text_y_offset()
+
+    def calculate_text_y_offset(self):
+        if self.icon is not None:
+            if self.icon_anchor in ("center", "e", "w"):
+                self.text_y_offset = -round(self.icon.height() / 2) - 5
+            elif self.icon_anchor in ("nw", "n", "ne"):
+                self.text_y_offset = -5
+            elif self.icon_anchor in ("sw", "s", "se"):
+                self.text_y_offset = -self.icon.height() - 5
+            else:
+                raise ValueError(f"CanvasPositionMarker: wring anchor value: {self.icon_anchor}")
+        else:
+            self.text_y_offset = -56
+
     def delete(self):
         if self in self.map_widget.canvas_marker_list:
             self.map_widget.canvas_marker_list.remove(self)
@@ -68,6 +88,13 @@ class CanvasPositionMarker:
     def set_text(self, text):
         self.text = text
         self.draw()
+
+    def change_icon(self, new_icon: tkinter.PhotoImage):
+        if self.icon is None:
+            raise AttributeError("CanvasPositionMarker: marker needs icon image in constructor to change icon image later")
+        else:
+            self.icon = new_icon
+            self.calculate_text_y_offset()
 
     def hide_image(self, image_hidden):
         self.image_hidden = image_hidden
@@ -115,38 +142,54 @@ class CanvasPositionMarker:
 
         if not self.deleted:
             if 0 - x_offset < canvas_pos_x < self.map_widget.width + x_offset and 0-y_offset < canvas_pos_y < self.map_widget.height + y_offset:
-                if self.polygon is None:
-                    self.polygon = self.map_widget.canvas.create_polygon(canvas_pos_x - 14, canvas_pos_y - 23,
-                                                                         canvas_pos_x, canvas_pos_y,
-                                                                         canvas_pos_x + 14, canvas_pos_y - 23,
-                                                                         fill=self.marker_color_outside, width=2,
-                                                                         outline=self.marker_color_outside, tag="marker")
-                    if self.command is not None:
-                        self.map_widget.canvas.tag_bind(self.polygon, "<Enter>", self.mouse_enter)
-                        self.map_widget.canvas.tag_bind(self.polygon, "<Leave>", self.mouse_leave)
-                        self.map_widget.canvas.tag_bind(self.polygon, "<Button-1>", self.click)
+                # draw icon image for marker
+                if self.icon is not None:
+                    if self.canvas_icon is None:
+                        self.canvas_icon = self.map_widget.canvas.create_image(canvas_pos_x, canvas_pos_y,
+                                                                               anchor=self.icon_anchor,
+                                                                               image=self.icon,
+                                                                               tag="marker")
+                        if self.command is not None:
+                            self.map_widget.canvas.tag_bind(self.canvas_icon, "<Enter>", self.mouse_enter)
+                            self.map_widget.canvas.tag_bind(self.canvas_icon, "<Leave>", self.mouse_leave)
+                            self.map_widget.canvas.tag_bind(self.canvas_icon, "<Button-1>", self.click)
+                    else:
+                        self.map_widget.canvas.coords(self.canvas_icon, canvas_pos_x, canvas_pos_y)
+
+                # draw standard icon shape
                 else:
-                    self.map_widget.canvas.coords(self.polygon,
-                                                  canvas_pos_x - 14, canvas_pos_y - 23,
-                                                  canvas_pos_x, canvas_pos_y,
-                                                  canvas_pos_x + 14, canvas_pos_y - 23)
-                if self.big_circle is None:
-                    self.big_circle = self.map_widget.canvas.create_oval(canvas_pos_x - 14, canvas_pos_y - 45,
-                                                                         canvas_pos_x + 14, canvas_pos_y - 17,
-                                                                         fill=self.marker_color_circle, width=6,
-                                                                         outline=self.marker_color_outside, tag="marker")
-                    if self.command is not None:
-                        self.map_widget.canvas.tag_bind(self.big_circle, "<Enter>", self.mouse_enter)
-                        self.map_widget.canvas.tag_bind(self.big_circle, "<Leave>", self.mouse_leave)
-                        self.map_widget.canvas.tag_bind(self.big_circle, "<Button-1>", self.click)
-                else:
-                    self.map_widget.canvas.coords(self.big_circle,
-                                                  canvas_pos_x - 14, canvas_pos_y - 45,
-                                                  canvas_pos_x + 14, canvas_pos_y - 17)
+                    if self.polygon is None:
+                        self.polygon = self.map_widget.canvas.create_polygon(canvas_pos_x - 14, canvas_pos_y - 23,
+                                                                             canvas_pos_x, canvas_pos_y,
+                                                                             canvas_pos_x + 14, canvas_pos_y - 23,
+                                                                             fill=self.marker_color_outside, width=2,
+                                                                             outline=self.marker_color_outside, tag="marker")
+                        if self.command is not None:
+                            self.map_widget.canvas.tag_bind(self.polygon, "<Enter>", self.mouse_enter)
+                            self.map_widget.canvas.tag_bind(self.polygon, "<Leave>", self.mouse_leave)
+                            self.map_widget.canvas.tag_bind(self.polygon, "<Button-1>", self.click)
+                    else:
+                        self.map_widget.canvas.coords(self.polygon,
+                                                      canvas_pos_x - 14, canvas_pos_y - 23,
+                                                      canvas_pos_x, canvas_pos_y,
+                                                      canvas_pos_x + 14, canvas_pos_y - 23)
+                    if self.big_circle is None:
+                        self.big_circle = self.map_widget.canvas.create_oval(canvas_pos_x - 14, canvas_pos_y - 45,
+                                                                             canvas_pos_x + 14, canvas_pos_y - 17,
+                                                                             fill=self.marker_color_circle, width=6,
+                                                                             outline=self.marker_color_outside, tag="marker")
+                        if self.command is not None:
+                            self.map_widget.canvas.tag_bind(self.big_circle, "<Enter>", self.mouse_enter)
+                            self.map_widget.canvas.tag_bind(self.big_circle, "<Leave>", self.mouse_leave)
+                            self.map_widget.canvas.tag_bind(self.big_circle, "<Button-1>", self.click)
+                    else:
+                        self.map_widget.canvas.coords(self.big_circle,
+                                                      canvas_pos_x - 14, canvas_pos_y - 45,
+                                                      canvas_pos_x + 14, canvas_pos_y - 17)
 
                 if self.text is not None:
                     if self.canvas_text is None:
-                        self.canvas_text = self.map_widget.canvas.create_text(canvas_pos_x, canvas_pos_y - 56,
+                        self.canvas_text = self.map_widget.canvas.create_text(canvas_pos_x, canvas_pos_y + self.text_y_offset,
                                                                               anchor=tkinter.S,
                                                                               text=self.text,
                                                                               fill=self.text_color,
@@ -157,7 +200,7 @@ class CanvasPositionMarker:
                             self.map_widget.canvas.tag_bind(self.canvas_text, "<Leave>", self.mouse_leave)
                             self.map_widget.canvas.tag_bind(self.canvas_text, "<Button-1>", self.click)
                     else:
-                        self.map_widget.canvas.coords(self.canvas_text, canvas_pos_x, canvas_pos_y - 56)
+                        self.map_widget.canvas.coords(self.canvas_text, canvas_pos_x, canvas_pos_y + self.text_y_offset)
                         self.map_widget.canvas.itemconfig(self.canvas_text, text=self.text)
                 else:
                     if self.canvas_text is not None:
@@ -167,12 +210,12 @@ class CanvasPositionMarker:
                         and not self.image_hidden:
 
                     if self.canvas_image is None:
-                        self.canvas_image = self.map_widget.canvas.create_image(canvas_pos_x, canvas_pos_y - 85,
+                        self.canvas_image = self.map_widget.canvas.create_image(canvas_pos_x, canvas_pos_y + (self.text_y_offset - 30),
                                                                                 anchor=tkinter.S,
                                                                                 image=self.image,
                                                                                 tag=("marker", "marker_image"))
                     else:
-                        self.map_widget.canvas.coords(self.canvas_image, canvas_pos_x, canvas_pos_y - 85)
+                        self.map_widget.canvas.coords(self.canvas_image, canvas_pos_x, canvas_pos_y + (self.text_y_offset - 30))
                 else:
                     if self.canvas_image is not None:
                         self.map_widget.canvas.delete(self.canvas_image)
@@ -196,7 +239,17 @@ class CanvasPositionMarker:
                         self.map_widget.canvas.delete(self.canvas_range)
                         self.canvas_range = None
             else:
-                self.map_widget.canvas.delete(self.polygon, self.big_circle, self.canvas_text, self.canvas_image, self.canvas_range)
-                self.polygon, self.big_circle, self.canvas_text, self.canvas_image, self.canvas_range = None, None, None, None, None
+                # delete icon image
+                if self.icon is not None:
+                    self.map_widget.canvas.delete(self.canvas_icon)
+                    self.canvas_icon = None
+                # delete icon canvas shapes
+                else:
+                    self.map_widget.canvas.delete(self.polygon, self.big_circle, self.canvas_image)
+                    self.polygon, self.big_circle, self.canvas_image = None, None, None
+
+                # delete text
+                self.map_widget.canvas.delete(self.canvas_text, canvas_range)
+                self.canvas_text, canvas_range = None, None
 
             self.map_widget.manage_z_order()

@@ -11,10 +11,11 @@ from .utility_functions import decimal_to_osm, osm_to_decimal
 class CanvasPath:
     def __init__(self,
                  map_widget: "TkinterMapView",
-                 position_list,
-                 color="#3E69CB",
+                 position_list: list,
+                 color: str = "#3E69CB",
                  command=None,
-                 name=None,
+                 name: str = None,
+                 width: int = 9,
                  data: any = None):
 
         self.map_widget = map_widget
@@ -25,6 +26,7 @@ class CanvasPath:
         self.path_color = color
         self.command = command
         self.canvas_line = None
+        self.width = width
         self.name = name
         self.data = data
 
@@ -98,7 +100,7 @@ class CanvasPath:
             if self.canvas_line is None:
                 self.map_widget.canvas.delete(self.canvas_line)
                 self.canvas_line = self.map_widget.canvas.create_line(self.canvas_line_positions,
-                                                                      width=9, fill=self.path_color,
+                                                                      width=self.width, fill=self.path_color,
                                                                       capstyle=tkinter.ROUND, joinstyle=tkinter.ROUND,
                                                                       tag="path")
 

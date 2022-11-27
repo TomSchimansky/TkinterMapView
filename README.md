@@ -18,10 +18,13 @@ But you can also embed the widget into a program like the following image shows.
 For example by using the [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter#readme) library,
 which provides rounded buttons and frames in a light and dark mode:
 
-![](documentation_images/customtkinter_example.gif)
-| _`examples/map_with_customtkinter.py` on Windows 11_
+
+https://user-images.githubusercontent.com/66446067/199613538-6be7bc5c-c88b-42d7-8cf5-a9ed2b011fa4.mp4
+
+|`examples/map_with_customtkinter.py` on macOS
 
 # Installation
+
 
 ```
 pip3 install tkintermapview
@@ -126,7 +129,7 @@ marker_3 = map_widget.set_marker(52.55, 13.4, text="52.55, 13.4")
 # marker_3.delete()
 ```
 A marker can be also customized by passing the following arguments to .set_marker(),
-.set_address() or .set_position(): `text, font, image (PhotoImage), image_zoom_visibility,
+.set_address() or .set_position(): `text, font, icon, icon_anchor, image (PhotoImage), image_zoom_visibility,
 marker_color_circle, marker_color_outside, text_color, command`.
 
 The command function will be called when the marker is clicked and will
@@ -142,6 +145,13 @@ You can also store an object or some reference inside the marker with the ``data
 can be set when creating a marker, and accessed or modified with ``marker.data``. This data attribute
 also exists for path and polygons.
 
+With the `icon` attribute you can pass a PIL.ImageTk.PhotoImage object to a marker, which will be
+displayed instead of the standard location icon. With `icon_anchor` you can specify the anchor
+for the icon image (center, n, nw, w, sw, s, ew, e, ne), corresponding to the position of the marker, standard is center, where the icon
+image is centered over the marker position. With the `.change_icon(new_icon)` method you can change
+the icon image later, but only if the marker already has an icon image from the beginning.
+In ``examples/map_view_marker_icon_images.py`` you can find example code for the ``icon`` attributes.
+
 <img src="documentation_images/marker_with_image.png" width="500"/>
 
 
@@ -151,6 +161,9 @@ also exists for path and polygons.
 You can also create a path which connects multiple markers or completely new positions.
 You pass a list with position tuples to the function `set_path` and get back a path object.
 The path object can be modified by adding a new position or remove a specific position.
+The `set_path` method accepts the following arguments: `position_list`, `color`, `command` (on click),
+`name` (string for identification), `width`, `data (anything can be stored in the path object).
+
 ````python
 # set a path
 path_1 = map_widget.set_path([marker_2.position, marker_3.position, (52.57, 13.4), (52.55, 13.35)])
@@ -266,7 +279,7 @@ self.map_widget.set_tile_server("http://c.tile.stamen.com/watercolor/{z}/{x}/{y}
 self.map_widget.set_tile_server("http://a.tile.stamen.com/toner/{z}/{x}/{y}.png")  # black and white
 self.map_widget.set_tile_server("https://tiles.wmflabs.org/hikebike/{z}/{x}/{y}.png")  # detailed hiking
 self.map_widget.set_tile_server("https://tiles.wmflabs.org/osm-no-labels/{z}/{x}/{y}.png")  # no labels
-self.map_widget.set_tile_server(""https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg")  # swisstopo map
+self.map_widget.set_tile_server("https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg")  # swisstopo map
 
 # example overlay tile server
 self.map_widget.set_overlay_tile_server("http://tiles.openseamap.org/seamark//{z}/{x}/{y}.png")  # sea-map overlay
@@ -277,10 +290,10 @@ self.map_widget.set_overlay_tile_server("http://a.tiles.openrailwaymap.org/stand
 ### Use offline tiles
 
 You can load tiles into a database to use them offline when there is no connection to 
-the tile server. Check out [examples/load_offline_tiles.py](https://github.com/TomSchimansky/TkinterMapView/blob/main/examples/load_offline_tiles.py) for more information.
+the tile server. Check out [examples/load_offline_tiles.py](https://github.com/TomSchimansky/TkinterMapView/blob/main/examples/map_with_offline_tiles.py) for more information.
 
 If you then create the TkinterMapView widget you pass the database path as an argument.
-An example of this can be found here: [examples/map_with_offline_tiles.py](https://github.com/TomSchimansky/TkinterMapView/blob/main/examples/map_with%20offline_tiles.py)
+An example of this can be found here: [examples/map_with_offline_tiles.py](https://github.com/TomSchimansky/TkinterMapView/blob/main/examples/map_with_offline_tiles.py)
 You can also pass a max_zoom argument to limit the possible zoom range if the database just holds
 the tiles until a specific zoom range which is not the limit of the used server.
 
