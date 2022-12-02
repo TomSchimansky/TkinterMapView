@@ -43,11 +43,16 @@ class TkinterMapView(tkinter.Frame):
         # detect color of master widget for rounded corners
         if bg_color is None:
             # map widget is placed in a CTkFrame from customtkinter library
-            if hasattr(self.master, "canvas") and hasattr(self.master, "fg_color"):
-                if type(self.master.fg_color) == tuple or type(self.master.fg_color) == list:
-                    self.bg_color: str = self.master.fg_color[self.master._appearance_mode]
-                else:
-                    self.bg_color: str = self.master.fg_color
+            if (hasattr(self.master, "canvas") and hasattr(self.master, "fg_color")) or (hasattr(self.master, "_canvas") and hasattr(self.master, "_fg_color")):
+                # customtkinter version >=5.0.0
+                if hasattr(self.master, "_apply_appearance_mode"):
+                    self.bg_color: str = self.master._apply_appearance_mode(self.master.cget("fg_color"))
+                # customtkinter version <=4.6.3
+                elif hasattr(self.master, "fg_color"):
+                    if type(self.master.fg_color) == tuple or type(self.master.fg_color) == list:
+                        self.bg_color: str = self.master.fg_color[self.master._appearance_mode]
+                    else:
+                        self.bg_color: str = self.master.fg_color
 
             # map widget is placed on a tkinter.Frame or tkinter.Tk
             elif isinstance(self.master, (tkinter.Frame, tkinter.Tk, tkinter.Toplevel, tkinter.LabelFrame)):

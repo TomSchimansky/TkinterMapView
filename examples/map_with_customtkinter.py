@@ -76,7 +76,7 @@ class App(customtkinter.CTk):
         self.entry = customtkinter.CTkEntry(master=self.frame_right,
                                             placeholder_text="type address")
         self.entry.grid(row=0, column=0, sticky="we", padx=(12, 0), pady=12)
-        self.entry.entry.bind("<Return>", self.search_event)
+        self.entry.bind("<Return>", self.search_event)
 
         self.button_5 = customtkinter.CTkButton(master=self.frame_right,
                                                 text="Search",
