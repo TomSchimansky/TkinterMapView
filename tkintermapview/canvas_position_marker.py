@@ -213,17 +213,11 @@ class CanvasPositionMarker:
                         self.map_widget.canvas.delete(self.canvas_image)
                         self.canvas_image = None
             else:
-                # delete icon image
-                if self.icon is not None:
-                    self.map_widget.canvas.delete(self.canvas_icon)
-                    self.canvas_icon = None
-                # delete icon canvas shapes
-                else:
-                    self.map_widget.canvas.delete(self.polygon, self.big_circle, self.canvas_image)
-                    self.polygon, self.big_circle, self.canvas_image = None, None, None
-
-                # delete text
+                self.map_widget.canvas.delete(self.canvas_icon)
                 self.map_widget.canvas.delete(self.canvas_text)
-                self.canvas_text = None
+                self.map_widget.canvas.delete(self.polygon)
+                self.map_widget.canvas.delete(self.big_circle)
+                self.map_widget.canvas.delete(self.canvas_image)
+                self.canvas_text, self.polygon, self.big_circle, self.canvas_image, self.canvas_icon = None, None, None, None, None
 
             self.map_widget.manage_z_order()
