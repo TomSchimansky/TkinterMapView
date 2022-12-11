@@ -73,8 +73,13 @@ class CanvasPositionMarker:
         if self in self.map_widget.canvas_marker_list:
             self.map_widget.canvas_marker_list.remove(self)
 
-        self.map_widget.canvas.delete(self.polygon, self.big_circle, self.canvas_text)
-        self.polygon, self.big_circle, self.canvas_text = None, None, None
+        self.map_widget.canvas.delete(self.polygon)
+        self.map_widget.canvas.delete(self.big_circle)
+        self.map_widget.canvas.delete(self.canvas_text)
+        self.map_widget.canvas.delete(self.canvas_icon)
+        self.map_widget.canvas.delete(self.canvas_image)
+
+        self.polygon, self.big_circle, self.canvas_text, self.canvas_image, self.canvas_icon = None, None, None, None, None
         self.deleted = True
         self.map_widget.canvas.update()
 

@@ -22,6 +22,7 @@ airport_image = ImageTk.PhotoImage(Image.open(os.path.join(current_path, "images
 
 def marker_callback(marker):
     print(marker.text)
+    marker.delete()
 
 
 # create markers
