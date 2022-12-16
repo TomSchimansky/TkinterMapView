@@ -40,6 +40,7 @@ https://pypi.org/project/tkintermapview/
 - [Set coordinate position](#set-coordinate-position)
 - [Set address position](#set-address-position)
 - [Set position with marker](#set-position-with-marker)
+- [Set position and zoom to fit bounding box](#set-position-and-zoom-to-fit-bounding-box)
 - [Create position markers](#create-position-markers)
 - [Create path from position list](#create-path-from-position-list)
 - [Create polygon from position list](#create-polygon-from-position-list)
@@ -113,6 +114,12 @@ print(marker_1.position, marker_1.text)  # get position and text
 marker_1.set_text("Colosseo in Rome")  # set new text
 # marker_1.set_position(48.860381, 2.338594)  # change position
 # marker_1.delete()
+```
+---
+### Set position and zoom to fit bounding box
+If you have two decimal coordinates (<lat1>, <long1>) and (<lat2>, <long2>), that define a box, so that the first coordinate is the top-left corner and the second coordinate is the bottom-right corner. Then you can use the `fit_bounding_box` method of the map widget to fit this box into the map widget:
+```python
+map_widget.fit_bounding_box((<lat1>, <long1>), (<lat2>, <long2>))
 ```
 ---
 ### Create position markers
