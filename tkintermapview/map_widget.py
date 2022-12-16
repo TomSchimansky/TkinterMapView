@@ -256,6 +256,45 @@ class TkinterMapView(tkinter.Frame):
                               (self.lower_right_tile_pos[1] + self.upper_left_tile_pos[1]) / 2,
                               round(self.zoom))
 
+    def fit_bounding_box(self, position_top_left: Tuple[float, float], position_bottom_right: Tuple[float, float]):
+        """ Fit the map to contain a bounding box with the maximum zoom level possible. """
+
+        # check positions
+        if not (position_top_left[0] > position_bottom_right[0] and position_top_left[1] < position_bottom_right[1]):
+            raise ValueError("incorrect bounding box positions, <must be top_left_position> <bottom_right_position>")
+
+        # update idle-tasks to make sure current dimensions are correct
+        self.update_idletasks()
+
+        last_fitting_zoom_level = self.min_zoom
+        middle_position_lat, middle_position_long = (position_bottom_right[0] + position_top_left[0]) / 2, (position_bottom_right[1] + position_top_left[1]) / 2
+
+        # loop through zoom levels beginning at minimum zoom
+        for zoom in range(self.min_zoom, self.max_zoom + 1):
+            # calculate tile positions for bounding box
+            middle_tile_position = decimal_to_osm(middle_position_lat, middle_position_long, zoom)
+            top_left_tile_position = decimal_to_osm(*position_top_left, zoom)
+            bottom_right_tile_position = decimal_to_osm(*position_bottom_right, zoom)
+
+            # calculate tile positions for map corners
+            calc_top_left_tile_position = (middle_tile_position[0] - ((self.width / 2) / self.tile_size),
+                                           middle_tile_position[1] - ((self.height / 2) / self.tile_size))
+            calc_bottom_right_tile_position = (middle_tile_position[0] + ((self.width / 2) / self.tile_size),
+                                               middle_tile_position[1] + ((self.height / 2) / self.tile_size))
+
+            # check if bounding box fits in map
+            if calc_top_left_tile_position[0] < top_left_tile_position[0] and calc_top_left_tile_position[1] < top_left_tile_position[1] \
+                    and calc_bottom_right_tile_position[0] > bottom_right_tile_position[0] and calc_bottom_right_tile_position[1] > bottom_right_tile_position[1]:
+                # set last_fitting_zoom_level to current zoom becuase bounding box fits in map
+                last_fitting_zoom_level = zoom
+            else:
+                # break because bounding box does not fit in map
+                break
+
+        # set zoom to last fitting zoom and position to middle position of bounding box
+        self.set_zoom(last_fitting_zoom_level)
+        self.set_position(middle_position_lat, middle_position_long)
+
     def set_position(self, deg_x, deg_y, text=None, marker=False, **kwargs) -> CanvasPositionMarker:
         """ set new middle position of map in decimal coordinates """
 
@@ -611,7 +650,7 @@ class TkinterMapView(tkinter.Frame):
                     self.insert_row(insert=0, y_name_position=top_y_name_position - y_diff)
             elif top_y_diff >= 1:
                 for y_diff in range(1, math.ceil(top_y_diff)):
-                    for x in range(len(self.canvas_tile_array)-1, -1, -1):
+                    for x in range(len(self.canvas_tile_array) - 1, -1, -1):
                         if len(self.canvas_tile_array[x]) > 1:
                             self.canvas_tile_array[x][0].delete()
                             del self.canvas_tile_array[x][0]
@@ -638,7 +677,7 @@ class TkinterMapView(tkinter.Frame):
                     self.insert_row(insert=len(self.canvas_tile_array[0]), y_name_position=bottom_y_name_position + y_diff)
             elif bottom_y_diff <= 1:
                 for y_diff in range(1, math.ceil(-bottom_y_diff) + 1):
-                    for x in range(len(self.canvas_tile_array)-1, -1, -1):
+                    for x in range(len(self.canvas_tile_array) - 1, -1, -1):
                         if len(self.canvas_tile_array[x]) > 1:
                             self.canvas_tile_array[x][-1].delete()
                             del self.canvas_tile_array[x][-1]
