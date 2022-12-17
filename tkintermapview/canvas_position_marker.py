@@ -22,7 +22,8 @@ class CanvasPositionMarker:
                  icon: tkinter.PhotoImage = None,
                  icon_anchor: str = "center",
                  image_zoom_visibility: tuple = (0, float("inf")),
-                 data: any = None):
+                 data: any = None,
+                 range: float = None):
 
         self.map_widget = map_widget
         self.position = position
@@ -39,12 +40,14 @@ class CanvasPositionMarker:
         self.deleted = False
         self.command = command
         self.data = data
+        self.range = range
 
         self.polygon = None
         self.big_circle = None
         self.canvas_text = None
         self.canvas_image = None
         self.canvas_icon = None
+        self.canvas_range = None
 
         if font is None:
             if sys.platform == "darwin":
@@ -112,6 +115,11 @@ class CanvasPositionMarker:
         if self.command is not None:
             self.command(self)
 
+    def get_canvas_range(self, range:float):
+        tile_position = decimal_to_osm(*self.position, round(self.map_widget.zoom))
+        tile_range = decimal_to_osm(self.position[0]+range, self.position[1], round(self.map_widget.zoom))
+        return abs(tile_position[1]-tile_range[1])
+
     def get_canvas_pos(self, position):
         tile_position = decimal_to_osm(*position, round(self.map_widget.zoom))
 
@@ -125,10 +133,15 @@ class CanvasPositionMarker:
 
     def draw(self, event=None):
         canvas_pos_x, canvas_pos_y = self.get_canvas_pos(self.position)
+        x_offset = 50
+        y_offset = 70
+        if self.range is not None:      
+            image_range = self.get_canvas_range(self.range)
+            x_offset = max(2*image_range, x_offset)
+            y_offset = max(2*image_range, y_offset)
 
         if not self.deleted:
-            if 0 - 50 < canvas_pos_x < self.map_widget.width + 50 and 0 < canvas_pos_y < self.map_widget.height + 70:
-
+            if 0 - x_offset < canvas_pos_x < self.map_widget.width + x_offset and 0-y_offset < canvas_pos_y < self.map_widget.height + y_offset:
                 # draw icon image for marker
                 if self.icon is not None:
                     if self.canvas_icon is None:
@@ -207,6 +220,24 @@ class CanvasPositionMarker:
                     if self.canvas_image is not None:
                         self.map_widget.canvas.delete(self.canvas_image)
                         self.canvas_image = None
+                if self.range is not None:
+                    if self.canvas_range is None:
+                        self.canvas_range = self.map_widget.canvas.create_oval(canvas_pos_x - image_range, canvas_pos_y - image_range,
+                                                                            canvas_pos_x + image_range, canvas_pos_y + image_range,
+                                                                            width=3,
+                                                                            outline=self.marker_color_outside,
+                                                                            tag=("marker"))
+                        if self.command is not None:
+                            self.map_widget.canvas.tag_bind(self.canvas_range, "<Enter>", self.mouse_enter)
+                            self.map_widget.canvas.tag_bind(self.canvas_range, "<Leave>", self.mouse_leave)
+                            self.map_widget.canvas.tag_bind(self.canvas_range, "<Button-1>", self.click)       
+                    else:
+                        self.map_widget.canvas.coords(self.canvas_range, canvas_pos_x - image_range, canvas_pos_y - image_range,
+                                                                        canvas_pos_x + image_range, canvas_pos_y + image_range)
+                else:
+                    if self.canvas_range is not None:
+                        self.map_widget.canvas.delete(self.canvas_range)
+                        self.canvas_range = None
             else:
                 # delete icon image
                 if self.icon is not None:
@@ -218,7 +249,7 @@ class CanvasPositionMarker:
                     self.polygon, self.big_circle, self.canvas_image = None, None, None
 
                 # delete text
-                self.map_widget.canvas.delete(self.canvas_text)
-                self.canvas_text = None
+                self.map_widget.canvas.delete(self.canvas_text, canvas_range)
+                self.canvas_text, canvas_range = None, None
 
             self.map_widget.manage_z_order()
