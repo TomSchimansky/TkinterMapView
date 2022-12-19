@@ -1,4 +1,4 @@
-__version__ = "1.20"
+__version__ = "1.21"
 
 from .map_widget import TkinterMapView
 from .offline_loading import OfflineLoader
