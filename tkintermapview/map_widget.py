@@ -35,6 +35,8 @@ class TkinterMapView(tkinter.Frame):
                  **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.running = True
+
         self.width = width
         self.height = height
         self.corner_radius = corner_radius if corner_radius <= 30 else 30  # corner_radius can't be greater than 30
@@ -158,6 +160,10 @@ class TkinterMapView(tkinter.Frame):
             self.canvas.bind("<Button-3>", self.mouse_right_click)
 
         self.draw_rounded_corners()
+
+    def destroy(self):
+        self.running = False
+        super().destroy()
 
     def draw_rounded_corners(self):
         self.canvas.delete("corner")
@@ -400,7 +406,7 @@ class TkinterMapView(tkinter.Frame):
         else:
             db_cursor = None
 
-        while True:
+        while self.running:
             if last_pre_cache_position != self.pre_cache_position:
                 last_pre_cache_position = self.pre_cache_position
                 zoom = round(self.zoom)
@@ -512,7 +518,7 @@ class TkinterMapView(tkinter.Frame):
         else:
             db_cursor = None
 
-        while True:
+        while self.running:
             if len(self.image_load_queue_tasks) > 0:
                 # task queue structure: [((zoom, x, y), corresponding canvas tile object), ... ]
                 task = self.image_load_queue_tasks.pop()
@@ -536,7 +542,7 @@ class TkinterMapView(tkinter.Frame):
 
     def update_canvas_tile_images(self):
 
-        while len(self.image_load_queue_results) > 0:
+        while len(self.image_load_queue_results) > 0 and self.running:
             # result queue structure: [((zoom, x, y), corresponding canvas tile object, tile image), ... ]
             result = self.image_load_queue_results.pop(0)
 
@@ -550,7 +556,8 @@ class TkinterMapView(tkinter.Frame):
 
         # This function calls itself every 10 ms with tk.after() so that the image updates come
         # from the main GUI thread, because tkinter can only be updated from the main thread.
-        self.after(10, self.update_canvas_tile_images)
+        if self.running:
+            self.after(10, self.update_canvas_tile_images)
 
     def insert_row(self, insert: int, y_name_position: int):
 
@@ -831,7 +838,8 @@ class TkinterMapView(tkinter.Frame):
             self.draw_move()
 
             if abs(self.move_velocity[0]) > 1 or abs(self.move_velocity[1]) > 1:
-                self.after(1, self.fading_move)
+                if self.running:
+                    self.after(1, self.fading_move)
 
     def set_zoom(self, zoom: int, relative_pointer_x: float = 0.5, relative_pointer_y: float = 0.5):
 
