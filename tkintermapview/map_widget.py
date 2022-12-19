@@ -257,6 +257,10 @@ class TkinterMapView(tkinter.Frame):
                               round(self.zoom))
 
     def fit_bounding_box(self, position_top_left: Tuple[float, float], position_bottom_right: Tuple[float, float]):
+        # wait 200ms till method is called, because dimensions have to update first
+        self.after(100, self._fit_bounding_box, position_top_left, position_bottom_right)
+
+    def _fit_bounding_box(self, position_top_left: Tuple[float, float], position_bottom_right: Tuple[float, float]):
         """ Fit the map to contain a bounding box with the maximum zoom level possible. """
 
         # check positions
