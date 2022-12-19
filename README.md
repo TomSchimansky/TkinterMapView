@@ -131,9 +131,13 @@ object, so that you can store the marker and modify or delete it later.
 # set a position marker
 marker_2 = map_widget.set_marker(52.516268, 13.377695, text="Brandenburger Tor")
 marker_3 = map_widget.set_marker(52.55, 13.4, text="52.55, 13.4")
-# marker_3.set_position(...)
-# marker_3.set_text(...)
-# marker_3.delete()
+
+# methods
+marker_3.set_position(...)
+marker_3.set_text(...)
+marker_3.change_icon(new_icon)
+marker_3.hide_image(True)  # or False
+marker_3.delete()
 ```
 A marker can be also customized by passing the following arguments to .set_marker(),
 .set_address() or .set_position(): `text, font, icon, icon_anchor, image (PhotoImage), image_zoom_visibility,
@@ -174,9 +178,12 @@ The `set_path` method accepts the following arguments: `position_list`, `color`,
 ````python
 # set a path
 path_1 = map_widget.set_path([marker_2.position, marker_3.position, (52.57, 13.4), (52.55, 13.35)])
-# path_1.add_position(...)
-# path_1.remove_position(...)
-# path_1.delete()
+
+# methods
+path_1.set_position_list(new_position_list)
+path_1.add_position(position)
+path_1.remove_position(position)
+path_1.delete()
 ````
 ---
 ### Create polygon from position list
@@ -199,9 +206,10 @@ polygon_1 = map_widget.set_polygon([(46.0732306, 6.0095215),
                                    command=polygon_click,
                                    name="switzerland_polygon")
 
-# polygon_1.remove_position(46.3772542, 6.4160156)
-# polygon_1.add_position(0, 0, index=5)
-# polygon_1.delete()
+# methods
+polygon_1.remove_position(46.3772542, 6.4160156)
+polygon_1.add_position(0, 0, index=5)
+polygon_1.delete()
 ````
 
 In ``examples/map_view_polygon_example.py`` you can find the full example program,
