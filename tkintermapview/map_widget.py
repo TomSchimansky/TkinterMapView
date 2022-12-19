@@ -385,6 +385,21 @@ class TkinterMapView(tkinter.Frame):
         if isinstance(map_object, (CanvasPath, CanvasPositionMarker, CanvasPolygon)):
             map_object.delete()
 
+    def delete_all_marker(self):
+        for i in range(len(self.canvas_marker_list) - 1, -1, -1):
+            self.canvas_marker_list[i].delete()
+        self.canvas_marker_list = []
+
+    def delete_all_path(self):
+        for i in range(len(self.canvas_path_list) - 1, -1, -1):
+            self.canvas_path_list[i].delete()
+        self.canvas_path_list = []
+
+    def delete_all_polygon(self):
+        for i in range(len(self.canvas_polygon_list) - 1, -1, -1):
+            self.canvas_polygon_list[i].delete()
+        self.canvas_polygon_list = []
+
     def manage_z_order(self):
         self.canvas.lift("polygon")
         self.canvas.lift("path")
