@@ -41,6 +41,10 @@ class CanvasPath:
         self.canvas_line = None
         self.deleted = True
 
+    def set_position_list(self, position_list: list):
+        self.position_list = position_list
+        self.draw()
+
     def add_position(self, deg_x, deg_y, index=-1):
         if index == -1:
             self.position_list.append((deg_x, deg_y))
