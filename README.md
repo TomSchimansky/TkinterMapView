@@ -166,6 +166,7 @@ In ``examples/map_view_marker_icon_images.py`` you can find example code for the
 <img src="documentation_images/marker_with_image.png" width="500"/>
 
 With `map_widget.delete_all_marker()` all marker on the map will be deleted.
+    
 ---
 ### Create path from position list
 
@@ -186,6 +187,7 @@ path_1.remove_position(position)
 path_1.delete()
 ````
 With `map_widget.delete_all_path()` all path on the map will be deleted.
+    
 ---
 ### Create polygon from position list
 
@@ -219,6 +221,7 @@ which results in the following:
 ![](documentation_images/map_view_polygon_example.png)
 
 With `map_widget.delete_all_polygon()` all polygons on the map will be deleted.
+    
 ---
 ### Mouse events on the map
 
