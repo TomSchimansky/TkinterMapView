@@ -135,7 +135,7 @@ class OfflineLoader:
 
         # check if section is already in database
         db_cursor.execute("SELECT * FROM sections s WHERE s.position_a=? AND s.position_b=? AND s.zoom_a=? AND zoom_b=? AND server=?;",
-                          (str(position_b), str(position_b), zoom_a, zoom_b, self.tile_server))
+                          (str(position_a), str(position_b), zoom_a, zoom_b, self.tile_server))
         if len(db_cursor.fetchall()) != 0:
             print("[save_offline_tiles] section is already in database", end="\n\n")
             db_connection.close()
@@ -201,7 +201,7 @@ class OfflineLoader:
 
         # insert loading section in database
         db_cursor.execute(f"INSERT INTO sections (position_a, position_b, zoom_a, zoom_b, server) VALUES (?, ?, ?, ?, ?);",
-                          (str(position_b), str(position_b), zoom_a, zoom_b, self.tile_server))
+                          (str(position_a), str(position_b), zoom_a, zoom_b, self.tile_server))
         db_connection.commit()
 
         db_connection.close()
