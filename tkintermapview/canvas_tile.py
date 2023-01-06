@@ -44,7 +44,10 @@ class CanvasTile:
         return canvas_pos_x, canvas_pos_y
 
     def delete(self):
-        self.map_widget.canvas.delete(self.canvas_object)
+        try:
+            self.map_widget.canvas.delete(self.canvas_object)
+        except Exception:
+            pass
 
     def draw(self, image_update=False):
 
