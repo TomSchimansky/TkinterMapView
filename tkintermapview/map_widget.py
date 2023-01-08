@@ -505,7 +505,10 @@ class TkinterMapView(tkinter.Frame):
 
                 image.paste(image_overlay, (0, 0), image_overlay)
 
-            image_tk = ImageTk.PhotoImage(image)
+            if self.running:
+                image_tk = ImageTk.PhotoImage(image)
+            else:
+                return self.empty_tile_image
 
             self.tile_image_cache[f"{zoom}{x}{y}"] = image_tk
             return image_tk
