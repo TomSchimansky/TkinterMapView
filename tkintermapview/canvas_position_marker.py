@@ -97,7 +97,7 @@ class CanvasPositionMarker:
         else:
             self.icon = new_icon
             self.calculate_text_y_offset()
-            self.draw()
+            self.map_widget.canvas.itemconfigure(self.canvas_icon, image=self.icon)
 
     def hide_image(self, image_hidden: bool):
         self.image_hidden = image_hidden

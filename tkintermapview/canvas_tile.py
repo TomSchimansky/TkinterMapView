@@ -65,8 +65,7 @@ class CanvasTile:
             self.map_widget.canvas.coords(self.canvas_object, canvas_pos_x, canvas_pos_y)
 
             if image_update:
-                if not (
-                        self.image == self.map_widget.not_loaded_tile_image or self.image == self.image == self.map_widget.empty_tile_image):
+                if not (self.image == self.map_widget.not_loaded_tile_image or self.image == self.image == self.map_widget.empty_tile_image):
                     self.map_widget.canvas.itemconfig(self.canvas_object, image=self.image)
                 else:
                     self.map_widget.canvas.delete(self.canvas_object)
