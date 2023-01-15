@@ -29,7 +29,7 @@ def marker_callback(marker):
 marker_1 = map_widget.set_marker(52.476062, 13.394172, text="Plane 1", icon=plane_image, command=marker_callback)
 marker_2 = map_widget.set_marker(52.352659, 13.499669, text="Plane 2", icon=plane_circle_1_image,
                                  image=airport_image, command=marker_callback)
-# marker_2.change_icon(plane_circle_2_image)
+# root_tk.after(3000, lambda: marker_2.change_icon(plane_image))
 
 # set initial position of map widget
 map_widget.set_address("Airport Berlin BER")
