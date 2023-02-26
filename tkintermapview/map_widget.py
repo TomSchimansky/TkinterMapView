@@ -490,38 +490,49 @@ class TkinterMapView(tkinter.Frame):
                 return self.empty_tile_image
 
         # try to get the tile from the server
+
+        layers = []  # map, overlay
+
+        # get map tile
+        save_tile = True
         try:
             url = self.tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
-            image = Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).raw)
-
-            if self.overlay_tile_server is not None:
-                url = self.overlay_tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
-                image_overlay = Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).raw)
-                image = image.convert("RGBA")
-                image_overlay = image_overlay.convert("RGBA")
-
-                if image_overlay.size is not (self.tile_size, self.tile_size):
-                    image_overlay = image_overlay.resize((self.tile_size, self.tile_size), Image.ANTIALIAS)
-
-                image.paste(image_overlay, (0, 0), image_overlay)
-
-            if self.running:
-                image_tk = ImageTk.PhotoImage(image)
-            else:
-                return self.empty_tile_image
-
-            self.tile_image_cache[f"{zoom}{x}{y}"] = image_tk
-            return image_tk
-
-        except PIL.UnidentifiedImageError:  # image does not exist for given coordinates
-            self.tile_image_cache[f"{zoom}{x}{y}"] = self.empty_tile_image
-            return self.empty_tile_image
-
-        except requests.exceptions.ConnectionError:
-            return self.empty_tile_image
-
+            layers.append(Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).raw))
         except Exception:
+            save_tile = False
+
+        # get overlay tile
+        if self.overlay_tile_server is not None:
+            try:
+                url = self.overlay_tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
+                if "file://" not in url:
+                    layers.append(Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).raw))
+                else:
+                    layers.append(Image.open(url.replace("file://", "")))
+            except Exception:
+                pass
+
+        if len(layers) == 0:  # no map or overlay tile was found
+            image_tk = self.empty_tile_image
+        elif len(layers) == 1:  # either map or overlay tile was found
+            image_tk = ImageTk.PhotoImage(layers[0])
+        else:  # both map and overlay tiles were found
+            layers = [layer.convert("RGBA") for layer in layers]
+
+            if layers[1].size is not (self.tile_size, self.tile_size):
+                layers[1] = layers[1].resize((self.tile_size, self.tile_size), Image.ANTIALIAS)
+
+            layers[0].paste(layers[1], (0, 0), layers[1])
+
+            image_tk = layers[0]
+
+        if save_tile:
+            self.tile_image_cache[f"{zoom}{x}{y}"] = image_tk
+
+        if not self.running:
             return self.empty_tile_image
+        else:
+            return image_tk
 
     def get_tile_image_from_cache(self, zoom: int, x: int, y: int):
         if f"{zoom}{x}{y}" not in self.tile_image_cache:
