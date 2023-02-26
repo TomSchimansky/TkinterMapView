@@ -524,7 +524,7 @@ class TkinterMapView(tkinter.Frame):
 
             layers[0].paste(layers[1], (0, 0), layers[1])
 
-            image_tk = layers[0]
+            image_tk = ImageTk.PhotoImage(layers[0])
 
         if save_tile:
             self.tile_image_cache[f"{zoom}{x}{y}"] = image_tk
