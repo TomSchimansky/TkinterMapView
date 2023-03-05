@@ -905,7 +905,10 @@ class TkinterMapView(tkinter.Frame):
         if sys.platform == "darwin":
             new_zoom = self.zoom + event.delta * 0.1
         elif sys.platform.startswith("win"):
-            new_zoom = self.zoom + event.delta * 0.01
+            if event.delta > 0:
+                new_zoom = self.zoom + 1
+            else:
+                new_zoom = self.zoom - 1
         elif event.num == 4:
             new_zoom = self.zoom + 1
         elif event.num == 5:
