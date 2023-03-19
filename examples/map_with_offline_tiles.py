@@ -5,7 +5,7 @@ from tkintermapview import TkinterMapView
 # create tkinter window
 root_tk = tkinter.Tk()
 root_tk.geometry(f"{1000}x{700}")
-root_tk.title("map_view_simple_example.py")
+root_tk.title("map_with_offline_tiles.py")
 
 # path for the database to use
 script_directory = os.path.dirname(os.path.abspath(__file__))
