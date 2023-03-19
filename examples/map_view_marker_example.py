@@ -1,7 +1,7 @@
-from PIL import Image, ImageTk
-import tkinter
 import os
-from tkintermapview import TkinterMapView
+import tkinter
+import tkintermapview
+from PIL import Image, ImageTk
 
 # create tkinter window
 root_tk = tkinter.Tk()
@@ -9,7 +9,7 @@ root_tk.geometry(f"{1000}x{700}")
 root_tk.title("map_view_marker_example.py")
 
 # create map widget
-map_widget = TkinterMapView(root_tk, width=1000, height=700, corner_radius=0)
+map_widget = tkintermapview.TkinterMapView(root_tk, width=1000, height=700, corner_radius=0)
 map_widget.pack(fill="both", expand=True)
 
 # load images in PhotoImage object

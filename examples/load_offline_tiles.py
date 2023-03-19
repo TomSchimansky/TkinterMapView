@@ -1,5 +1,5 @@
-import tkintermapview
 import os
+import tkintermapview
 
 
 # This scripts creates a database with offline tiles.
