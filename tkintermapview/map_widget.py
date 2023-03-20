@@ -32,6 +32,7 @@ class TkinterMapView(tkinter.Frame):
                  database_path: str = None,
                  use_database_only: bool = False,
                  max_zoom: int = 19,
+                 user_agent: str = None,
                  **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -130,6 +131,9 @@ class TkinterMapView(tkinter.Frame):
         self.overlay_tile_server: Union[str, None] = None
         self.max_zoom = max_zoom  # should be set according to tile server max zoom
         self.min_zoom: int = math.ceil(math.log2(math.ceil(self.width / self.tile_size)))  # min zoom at which map completely fills widget
+
+        # user agent
+        self.user_agent = user_agent
 
         # pre caching for smoother movements (load tile images into cache at a certain radius around the pre_cache_position)
         self.pre_cache_position: Union[Tuple[float, float], None] = None
@@ -330,7 +334,7 @@ class TkinterMapView(tkinter.Frame):
         """ Function uses geocode service of OpenStreetMap (Nominatim).
             https://geocoder.readthedocs.io/providers/OpenStreetMap.html """
 
-        result = geocoder.osm(address_string)
+        result = geocoder.osm(address_string, headers={"User-Agent": self.user_agent})
 
         if result.ok:
 
@@ -492,11 +496,11 @@ class TkinterMapView(tkinter.Frame):
         # try to get the tile from the server
         try:
             url = self.tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
-            image = Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).raw)
+            image = Image.open(requests.get(url, stream=True, headers={"User-Agent": self.user_agent}).raw)
 
             if self.overlay_tile_server is not None:
                 url = self.overlay_tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
-                image_overlay = Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).raw)
+                image_overlay = Image.open(requests.get(url, stream=True, headers={"User-Agent": self.user_agent}).raw)
                 image = image.convert("RGBA")
                 image_overlay = image_overlay.convert("RGBA")
 

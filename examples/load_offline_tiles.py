@@ -15,7 +15,8 @@ script_directory = os.path.dirname(os.path.abspath(__file__))
 database_path = os.path.join(script_directory, "offline_tiles_nyc.db")
 
 # create OfflineLoader instance
-loader = tkintermapview.OfflineLoader(path=database_path)
+loader = tkintermapview.OfflineLoader(path=database_path,
+                                      user_agent="TkinterMapViewLoadOfflineTiles/{tkintermapview.__version__}")
 
 # save the tiles to the database, an existing database will extended
 loader.save_offline_tiles(top_left_position, bottom_right_position, zoom_min, zoom_max)
