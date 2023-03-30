@@ -309,7 +309,7 @@ class TkinterMapView(tkinter.Frame):
         """ set new middle position of map in decimal coordinates """
 
         # convert given decimal coordinates to OSM coordinates and set corner positions accordingly
-        current_tile_position = decimal_to_osm(deg_x, deg_y, self.zoom)
+        current_tile_position = decimal_to_osm(deg_x, deg_y, round(self.zoom))
         self.upper_left_tile_pos = (current_tile_position[0] - ((self.width / 2) / self.tile_size),
                                     current_tile_position[1] - ((self.height / 2) / self.tile_size))
 
@@ -323,6 +323,7 @@ class TkinterMapView(tkinter.Frame):
 
         self.check_map_border_crossing()
         self.draw_initial_array()
+        # self.draw_move() ausreichend?
 
         return marker_object
 
