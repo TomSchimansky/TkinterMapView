@@ -1,5 +1,5 @@
 import customtkinter
-from tkintermapview import TkinterMapView
+import tkintermapview
 
 customtkinter.set_default_color_theme("blue")
 
@@ -7,6 +7,7 @@ customtkinter.set_default_color_theme("blue")
 class App(customtkinter.CTk):
 
     APP_NAME = "TkinterMapView with CustomTkinter"
+    USER_AGENT = f"TkinterMapViewWithCustomTkinter/{tkintermapview.__version__}"
     WIDTH = 800
     HEIGHT = 500
 
@@ -70,7 +71,7 @@ class App(customtkinter.CTk):
         self.frame_right.grid_columnconfigure(1, weight=0)
         self.frame_right.grid_columnconfigure(2, weight=1)
 
-        self.map_widget = TkinterMapView(self.frame_right, corner_radius=0)
+        self.map_widget = tkintermapview.TkinterMapView(self.frame_right, corner_radius=0, user_agent=self.USER_AGENT)
         self.map_widget.grid(row=1, rowspan=1, column=0, columnspan=3, sticky="nswe", padx=(0, 0), pady=(0, 0))
 
         self.entry = customtkinter.CTkEntry(master=self.frame_right,

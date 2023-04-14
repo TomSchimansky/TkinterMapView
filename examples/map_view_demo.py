@@ -1,12 +1,13 @@
 import sys
 import tkinter
 import tkinter.messagebox
-from tkintermapview import TkinterMapView
+import tkintermapview
 
 
 class App(tkinter.Tk):
 
     APP_NAME = "map_view_demo.py"
+    USER_AGENT = f"TkinterMapViewDemo/{tkintermapview.__version__}"
     WIDTH = 800
     HEIGHT = 750
 
@@ -38,7 +39,7 @@ class App(tkinter.Tk):
         self.search_bar_clear = tkinter.Button(master=self, width=8, text="Clear", command=self.clear)
         self.search_bar_clear.grid(row=0, column=2, pady=10, padx=10)
 
-        self.map_widget = TkinterMapView(width=self.WIDTH, height=600, corner_radius=0)
+        self.map_widget = tkintermapview.TkinterMapView(width=self.WIDTH, height=600, corner_radius=0, user_agent=self.USER_AGENT)
         self.map_widget.grid(row=1, column=0, columnspan=3, sticky="nsew")
 
         self.marker_list_box = tkinter.Listbox(self, height=8)

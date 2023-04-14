@@ -62,7 +62,8 @@ import tkintermapview
 
 Create the standard tkinter window and place a TkinterMapView in the middle of the window.
 The first argument must be the widgets master, then you specify the `width`, `height` and `corner_radius`
-of the widget.
+of the widget. The `user_agent` argument must be a string that identifies your application, as explained
+in the [Nominatim Usage Policy](https://operations.osmfoundation.org/policies/nominatim/).
 ```python
 # create tkinter window
 root_tk = tkinter.Tk()
@@ -70,7 +71,8 @@ root_tk.geometry(f"{800}x{600}")
 root_tk.title("map_view_example.py")
 
 # create map widget
-map_widget = tkintermapview.TkinterMapView(root_tk, width=800, height=600, corner_radius=0)
+map_widget = tkintermapview.TkinterMapView(root_tk, width=800, height=600, corner_radius=0,
+                                           user_agent="Example/1.0")
 map_widget.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
 ```
 If you also call `root_tk.mainloop()` at the end, this is already a fully working example to test the map widget.
