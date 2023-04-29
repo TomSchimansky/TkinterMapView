@@ -190,9 +190,13 @@ class TkinterMapView(tkinter.Frame):
         if self.width != event.width or self.height != event.height:
             self.width = event.width
             self.height = event.height
-            self.min_zoom = math.ceil(math.log2(math.ceil(self.width / self.tile_size)))
+            self.min_zoom = max(math.ceil(math.log2(math.ceil(self.width / self.tile_size))),
+                                math.ceil(math.log2(math.ceil(self.height / self.tile_size))))
 
-            self.set_zoom(self.zoom)  # call zoom to set the position vertices right
+            # pass True to set_zoom which will tell it to call draw_zoom even if it hasn't changed
+            # (doing this because zoom may not have changed, but top-left tile may not be in the top-left corner anymore,
+            # so blank tiles can appear it this isn't done)
+            self.set_zoom(int(round(self.zoom, 0)), called_from_update_dimensions=True)  # call zoom to set the position vertices right
             self.draw_move()  # call move to draw new tiles or delete tiles
             self.draw_rounded_corners()
 
@@ -871,7 +875,7 @@ class TkinterMapView(tkinter.Frame):
                 if self.running:
                     self.after(1, self.fading_move)
 
-    def set_zoom(self, zoom: int, relative_pointer_x: float = 0.5, relative_pointer_y: float = 0.5):
+    def set_zoom(self, zoom: int, relative_pointer_x: float = 0.5, relative_pointer_y: float = 0.5, called_from_update_dimensions: bool = False):
 
         mouse_tile_pos_x = self.upper_left_tile_pos[0] + (self.lower_right_tile_pos[0] - self.upper_left_tile_pos[0]) * relative_pointer_x
         mouse_tile_pos_y = self.upper_left_tile_pos[1] + (self.lower_right_tile_pos[1] - self.upper_left_tile_pos[1]) * relative_pointer_y
@@ -894,7 +898,8 @@ class TkinterMapView(tkinter.Frame):
         self.lower_right_tile_pos = (current_tile_mouse_position[0] + (1 - relative_pointer_x) * (self.width / self.tile_size),
                                      current_tile_mouse_position[1] + (1 - relative_pointer_y) * (self.height / self.tile_size))
 
-        if round(self.zoom) != round(self.last_zoom):
+        # check if zoom level changed or if function was called from update_dimensions and if so, redraw map
+        if (round(self.zoom) != round(self.last_zoom)) or called_from_update_dimensions:
             self.check_map_border_crossing()
             self.draw_zoom()
             self.last_zoom = round(self.zoom)
