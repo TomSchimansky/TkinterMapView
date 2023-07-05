@@ -163,6 +163,9 @@ class TkinterMapView(tkinter.Frame):
 
     def destroy(self):
         self.running = False
+        self.pre_cache_thread.join()
+        for thread in self.image_load_thread_pool:
+            thread.join()
         super().destroy()
 
     def draw_rounded_corners(self):
