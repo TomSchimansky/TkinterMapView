@@ -471,8 +471,29 @@ class TkinterMapView(tkinter.Frame):
                                   (zoom, x, y, self.tile_server))
                 result = db_cursor.fetchone()
 
+                
+
                 if result is not None:
                     image = Image.open(io.BytesIO(result[0]))
+
+                    #Add overlay to offline tiles   
+                    if self.overlay_tile_server is not None:
+                        db_cursor.execute("SELECT t.tile_image FROM tiles t WHERE t.zoom=? AND t.x=? AND t.y=? AND t.server=?;",
+                                        (zoom, x, y, self.overlay_tile_server))
+                        result_overlay = db_cursor.fetchone()
+
+                        if result_overlay is not None:
+                            image_overlay = Image.open(io.BytesIO(result_overlay[0]))
+                            image = image.convert("RGBA")
+                            image_overlay = image_overlay.convert("RGBA")
+                            
+                            if image_overlay.size is not (self.tile_size, self.tile_size):
+                                image_overlay = image_overlay.resize((self.tile_size, self.tile_size), Image.ANTIALIAS)
+                        else:
+                            image_overlay = None
+                    
+                        image.paste(image_overlay, (0, 0), image_overlay)
+
                     image_tk = ImageTk.PhotoImage(image)
                     self.tile_image_cache[f"{zoom}{x}{y}"] = image_tk
                     return image_tk
