@@ -32,6 +32,7 @@ class TkinterMapView(tkinter.Frame):
                  database_path: str = None,
                  use_database_only: bool = False,
                  max_zoom: int = 19,
+                 bind_mouse_wheel: bool = True,
                  **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -92,7 +93,7 @@ class TkinterMapView(tkinter.Frame):
         self.canvas.bind("<B1-Motion>", self.mouse_move)
         self.canvas.bind("<Button-1>", self.mouse_click)
         self.canvas.bind("<ButtonRelease-1>", self.mouse_release)
-        self.canvas.bind("<MouseWheel>", self.mouse_zoom)
+        if bind_mouse_wheel: self.canvas.bind("<MouseWheel>", self.mouse_zoom)
         self.canvas.bind("<Button-4>", self.mouse_zoom)
         self.canvas.bind("<Button-5>", self.mouse_zoom)
         self.bind('<Configure>', self.update_dimensions)
