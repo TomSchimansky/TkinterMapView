@@ -190,9 +190,13 @@ class TkinterMapView(tkinter.Frame):
         if self.width != event.width or self.height != event.height:
             self.width = event.width
             self.height = event.height
-            self.min_zoom = math.ceil(math.log2(math.ceil(self.width / self.tile_size)))
+            self.min_zoom = max(math.ceil(math.log2(math.ceil(self.width / self.tile_size))),
+                                math.ceil(math.log2(math.ceil(self.height / self.tile_size))))
 
-            self.set_zoom(self.zoom)  # call zoom to set the position vertices right
+            # pass True to set_zoom which will tell it to call draw_zoom even if it hasn't changed
+            # (doing this because zoom may not have changed, but top-left tile may not be in the top-left corner anymore,
+            # so blank tiles can appear it this isn't done)
+            self.set_zoom(int(round(self.zoom, 0)), called_from_update_dimensions=True)  # call zoom to set the position vertices right
             self.draw_move()  # call move to draw new tiles or delete tiles
             self.draw_rounded_corners()
 
@@ -491,38 +495,49 @@ class TkinterMapView(tkinter.Frame):
                 return self.empty_tile_image
 
         # try to get the tile from the server
+
+        layers = []  # map, overlay
+
+        # get map tile
+        save_tile = True
         try:
             url = self.tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
-            image = Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).raw)
-
-            if self.overlay_tile_server is not None:
-                url = self.overlay_tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
-                image_overlay = Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).raw)
-                image = image.convert("RGBA")
-                image_overlay = image_overlay.convert("RGBA")
-
-                if image_overlay.size is not (self.tile_size, self.tile_size):
-                    image_overlay = image_overlay.resize((self.tile_size, self.tile_size), Image.ANTIALIAS)
-
-                image.paste(image_overlay, (0, 0), image_overlay)
-
-            if self.running:
-                image_tk = ImageTk.PhotoImage(image)
-            else:
-                return self.empty_tile_image
-
-            self.tile_image_cache[f"{zoom}{x}{y}"] = image_tk
-            return image_tk
-
-        except PIL.UnidentifiedImageError:  # image does not exist for given coordinates
-            self.tile_image_cache[f"{zoom}{x}{y}"] = self.empty_tile_image
-            return self.empty_tile_image
-
-        except requests.exceptions.ConnectionError:
-            return self.empty_tile_image
-
+            layers.append(Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).raw))
         except Exception:
+            save_tile = False
+
+        # get overlay tile
+        if self.overlay_tile_server is not None:
+            try:
+                url = self.overlay_tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
+                if "file://" not in url:
+                    layers.append(Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).raw))
+                else:
+                    layers.append(Image.open(url.replace("file://", "")))
+            except Exception:
+                pass
+
+        if len(layers) == 0:  # no map or overlay tile was found
+            image_tk = self.empty_tile_image
+        elif len(layers) == 1:  # either map or overlay tile was found
+            image_tk = ImageTk.PhotoImage(layers[0])
+        else:  # both map and overlay tiles were found
+            layers = [layer.convert("RGBA") for layer in layers]
+
+            if layers[1].size is not (self.tile_size, self.tile_size):
+                layers[1] = layers[1].resize((self.tile_size, self.tile_size), Image.ANTIALIAS)
+
+            layers[0].paste(layers[1], (0, 0), layers[1])
+
+            image_tk = ImageTk.PhotoImage(layers[0])
+
+        if save_tile:
+            self.tile_image_cache[f"{zoom}{x}{y}"] = image_tk
+
+        if not self.running:
             return self.empty_tile_image
+        else:
+            return image_tk
 
     def get_tile_image_from_cache(self, zoom: int, x: int, y: int):
         if f"{zoom}{x}{y}" not in self.tile_image_cache:
@@ -860,7 +875,7 @@ class TkinterMapView(tkinter.Frame):
                 if self.running:
                     self.after(1, self.fading_move)
 
-    def set_zoom(self, zoom: int, relative_pointer_x: float = 0.5, relative_pointer_y: float = 0.5):
+    def set_zoom(self, zoom: int, relative_pointer_x: float = 0.5, relative_pointer_y: float = 0.5, called_from_update_dimensions: bool = False):
 
         mouse_tile_pos_x = self.upper_left_tile_pos[0] + (self.lower_right_tile_pos[0] - self.upper_left_tile_pos[0]) * relative_pointer_x
         mouse_tile_pos_y = self.upper_left_tile_pos[1] + (self.lower_right_tile_pos[1] - self.upper_left_tile_pos[1]) * relative_pointer_y
@@ -883,7 +898,8 @@ class TkinterMapView(tkinter.Frame):
         self.lower_right_tile_pos = (current_tile_mouse_position[0] + (1 - relative_pointer_x) * (self.width / self.tile_size),
                                      current_tile_mouse_position[1] + (1 - relative_pointer_y) * (self.height / self.tile_size))
 
-        if round(self.zoom) != round(self.last_zoom):
+        # check if zoom level changed or if function was called from update_dimensions and if so, redraw map
+        if (round(self.zoom) != round(self.last_zoom)) or called_from_update_dimensions:
             self.check_map_border_crossing()
             self.draw_zoom()
             self.last_zoom = round(self.zoom)
@@ -895,7 +911,10 @@ class TkinterMapView(tkinter.Frame):
         if sys.platform == "darwin":
             new_zoom = self.zoom + event.delta * 0.1
         elif sys.platform.startswith("win"):
-            new_zoom = self.zoom + event.delta * 0.01
+            if event.delta > 0:
+                new_zoom = self.zoom + 1
+            else:
+                new_zoom = self.zoom - 1
         elif event.num == 4:
             new_zoom = self.zoom + 1
         elif event.num == 5:
