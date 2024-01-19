@@ -492,7 +492,7 @@ class TkinterMapView(tkinter.Frame):
 
         # try to get the tile from the server
         try:
-            url = self.tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
+            url = self.tile_server.format(x=str(x), y=str(y), z=str(zoom))
             image = Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).raw)
 
             if self.overlay_tile_server is not None:
