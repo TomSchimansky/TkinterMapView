@@ -273,7 +273,7 @@ city = tkintermapview.convert_coordinates_to_city(51.5122057, -0.0994014)
 
 Convert decimal coords to country name:
 ```python
-country = tkintermapview.convert_coordinates_to_city(51.5122057, -0.0994014)
+country = tkintermapview.convert_coordinates_to_country(51.5122057, -0.0994014)
 # country: "United Kingdom"
 ```
 
