@@ -73,8 +73,8 @@ class CanvasPolygon:
     def get_canvas_pos(self, position, widget_tile_width, widget_tile_height):
         tile_position = decimal_to_osm(*position, round(self.map_widget.zoom))
 
-        canvas_pos_x = ((tile_position[0] - self.map_widget.upper_left_tile_pos[0]) / widget_tile_width) * self.map_widget.width
-        canvas_pos_y = ((tile_position[1] - self.map_widget.upper_left_tile_pos[1]) / widget_tile_height) * self.map_widget.height
+        canvas_pos_x = ((tile_position[0] - self.map_widget.upper_left_tile_pos_bounded[0]) / widget_tile_width) * self.map_widget.width
+        canvas_pos_y = ((tile_position[1] - self.map_widget.upper_left_tile_pos_bounded[1]) / widget_tile_height) * self.map_widget.height
 
         return canvas_pos_x, canvas_pos_y
 
@@ -89,8 +89,8 @@ class CanvasPolygon:
 
         # if only moving happened and len(self.position_list) did not change, shift current positions, else calculate new position_list
         if move is True and self.last_upper_left_tile_pos is not None and new_line_length is False:
-            x_move = ((self.last_upper_left_tile_pos[0] - self.map_widget.upper_left_tile_pos[0]) / widget_tile_width) * self.map_widget.width
-            y_move = ((self.last_upper_left_tile_pos[1] - self.map_widget.upper_left_tile_pos[1]) / widget_tile_height) * self.map_widget.height
+            x_move = ((self.last_upper_left_tile_pos[0] - self.map_widget.upper_left_tile_pos_bounded[0]) / widget_tile_width) * self.map_widget.width
+            y_move = ((self.last_upper_left_tile_pos[1] - self.map_widget.upper_left_tile_pos_bounded[1]) / widget_tile_height) * self.map_widget.height
 
             for i in range(0, len(self.position_list) * 2, 2):
                 self.canvas_polygon_positions[i] += x_move
@@ -127,4 +127,4 @@ class CanvasPolygon:
             self.canvas_polygon = None
 
         self.map_widget.manage_z_order()
-        self.last_upper_left_tile_pos = self.map_widget.upper_left_tile_pos
+        self.last_upper_left_tile_pos = self.map_widget.upper_left_tile_pos_bounded

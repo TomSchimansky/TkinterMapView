@@ -17,7 +17,7 @@ from functools import partial
 
 from .canvas_position_marker import CanvasPositionMarker
 from .canvas_tile import CanvasTile
-from .utility_functions import decimal_to_osm, osm_to_decimal
+from .utility_functions import decimal_to_osm, osm_to_decimal, unbounded_osm_to_osm
 from .canvas_button import CanvasButton
 from .canvas_path import CanvasPath
 from .canvas_polygon import CanvasPolygon
@@ -109,6 +109,7 @@ class TkinterMapView(tkinter.Frame):
         # describes the tile layout
         self.zoom: float = 0
         self.upper_left_tile_pos: Tuple[float, float] = (0, 0)  # in OSM coords
+        self.upper_left_tile_pos_bounded: Tuple[float, float] = (0, 0)  # in OSM coords
         self.lower_right_tile_pos: Tuple[float, float] = (0, 0)
         self.tile_size: int = 256  # in pixel
         self.last_zoom: float = self.zoom
@@ -432,16 +433,21 @@ class TkinterMapView(tkinter.Frame):
 
                 # pre cache top and bottom row
                 for x in range(self.pre_cache_position[0] - radius, self.pre_cache_position[0] + radius + 1):
-                    if f"{zoom}{x}{self.pre_cache_position[1] + radius}" not in self.tile_image_cache:
+                    tile_x, tile_y = unbounded_osm_to_osm(x, self.pre_cache_position[1] + radius, zoom)
+                    if f"{zoom}{tile_x}{tile_y}" not in self.tile_image_cache:
                         self.request_image(zoom, x, self.pre_cache_position[1] + radius, db_cursor=db_cursor)
-                    if f"{zoom}{x}{self.pre_cache_position[1] - radius}" not in self.tile_image_cache:
+                    tile_x, tile_y = unbounded_osm_to_osm(x, self.pre_cache_position[1] - radius, zoom)
+                    if f"{zoom}{tile_x}{tile_y}" not in self.tile_image_cache:
                         self.request_image(zoom, x, self.pre_cache_position[1] - radius, db_cursor=db_cursor)
 
                 # pre cache left and right column
                 for y in range(self.pre_cache_position[1] - radius, self.pre_cache_position[1] + radius + 1):
-                    if f"{zoom}{self.pre_cache_position[0] + radius}{y}" not in self.tile_image_cache:
+                    tile_x, tile_y = unbounded_osm_to_osm(self.pre_cache_position[0] + radius, y, zoom)
+                    if f"{zoom}{tile_x}{tile_y}" not in self.tile_image_cache:
                         self.request_image(zoom, self.pre_cache_position[0] + radius, y, db_cursor=db_cursor)
-                    if f"{zoom}{self.pre_cache_position[0] - radius}{y}" not in self.tile_image_cache:
+
+                    tile_x, tile_y = unbounded_osm_to_osm(self.pre_cache_position[0] - radius, y, zoom)
+                    if f"{zoom}{tile_x}{tile_y}" not in self.tile_image_cache:
                         self.request_image(zoom, self.pre_cache_position[0] - radius, y, db_cursor=db_cursor)
 
                 # raise the radius
@@ -463,18 +469,18 @@ class TkinterMapView(tkinter.Frame):
                     del self.tile_image_cache[key]
 
     def request_image(self, zoom: int, x: int, y: int, db_cursor=None) -> ImageTk.PhotoImage:
-
+        tile_x, tile_y = unbounded_osm_to_osm(x, y, zoom)
         # if database is available check first if tile is in database, if not try to use server
         if db_cursor is not None:
             try:
                 db_cursor.execute("SELECT t.tile_image FROM tiles t WHERE t.zoom=? AND t.x=? AND t.y=? AND t.server=?;",
-                                  (zoom, x, y, self.tile_server))
+                                  (zoom, tile_x, tile_y, self.tile_server))
                 result = db_cursor.fetchone()
 
                 if result is not None:
                     image = Image.open(io.BytesIO(result[0]))
                     image_tk = ImageTk.PhotoImage(image)
-                    self.tile_image_cache[f"{zoom}{x}{y}"] = image_tk
+                    self.tile_image_cache[f"{zoom}{tile_x}{tile_y}"] = image_tk
                     return image_tk
                 elif self.use_database_only:
                     return self.empty_tile_image
@@ -492,11 +498,11 @@ class TkinterMapView(tkinter.Frame):
 
         # try to get the tile from the server
         try:
-            url = self.tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
+            url = self.tile_server.replace("{x}", str(tile_x)).replace("{y}", str(tile_y)).replace("{z}", str(zoom))
             image = Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).raw)
 
             if self.overlay_tile_server is not None:
-                url = self.overlay_tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
+                url = self.overlay_tile_server.replace("{x}", str(tile_x)).replace("{y}", str(tile_y)).replace("{z}", str(zoom))
                 image_overlay = Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).raw)
                 image = image.convert("RGBA")
                 image_overlay = image_overlay.convert("RGBA")
@@ -511,11 +517,11 @@ class TkinterMapView(tkinter.Frame):
             else:
                 return self.empty_tile_image
 
-            self.tile_image_cache[f"{zoom}{x}{y}"] = image_tk
+            self.tile_image_cache[f"{zoom}{tile_x}{tile_y}"] = image_tk
             return image_tk
 
         except PIL.UnidentifiedImageError:  # image does not exist for given coordinates
-            self.tile_image_cache[f"{zoom}{x}{y}"] = self.empty_tile_image
+            self.tile_image_cache[f"{zoom}{tile_x}{tile_y}"] = self.empty_tile_image
             return self.empty_tile_image
 
         except requests.exceptions.ConnectionError:
@@ -525,10 +531,11 @@ class TkinterMapView(tkinter.Frame):
             return self.empty_tile_image
 
     def get_tile_image_from_cache(self, zoom: int, x: int, y: int):
-        if f"{zoom}{x}{y}" not in self.tile_image_cache:
+        tile_x, tile_y = unbounded_osm_to_osm(x, y, zoom)
+        if f"{zoom}{tile_x}{tile_y}" not in self.tile_image_cache:
             return False
         else:
-            return self.tile_image_cache[f"{zoom}{x}{y}"]
+            return self.tile_image_cache[f"{zoom}{tile_x}{tile_y}"]
 
     def load_images_background(self):
         if self.database_path is not None:
@@ -907,18 +914,20 @@ class TkinterMapView(tkinter.Frame):
 
     def check_map_border_crossing(self):
         diff_x, diff_y = 0, 0
-        if self.upper_left_tile_pos[0] < 0:
-            diff_x += 0 - self.upper_left_tile_pos[0]
+        # if self.upper_left_tile_pos[0] < 0:
+        #     diff_x += 0 - self.upper_left_tile_pos[0]
+        # if self.lower_right_tile_pos[0] > 2 ** round(self.zoom):
+        #     diff_x -= self.lower_right_tile_pos[0] - (2 ** round(self.zoom))
 
         if self.upper_left_tile_pos[1] < 0:
             diff_y += 0 - self.upper_left_tile_pos[1]
-        if self.lower_right_tile_pos[0] > 2 ** round(self.zoom):
-            diff_x -= self.lower_right_tile_pos[0] - (2 ** round(self.zoom))
         if self.lower_right_tile_pos[1] > 2 ** round(self.zoom):
             diff_y -= self.lower_right_tile_pos[1] - (2 ** round(self.zoom))
 
         self.upper_left_tile_pos = self.upper_left_tile_pos[0] + diff_x, self.upper_left_tile_pos[1] + diff_y
         self.lower_right_tile_pos = self.lower_right_tile_pos[0] + diff_x, self.lower_right_tile_pos[1] + diff_y
+
+        self.upper_left_tile_pos_bounded = unbounded_osm_to_osm(self.upper_left_tile_pos[0], self.upper_left_tile_pos[1], self.zoom)
 
     def button_zoom_in(self):
         # zoom into middle of map
