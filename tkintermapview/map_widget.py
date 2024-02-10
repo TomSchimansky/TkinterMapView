@@ -210,7 +210,8 @@ class TkinterMapView(tkinter.Frame):
         tile_mouse_x = self.upper_left_tile_pos[0] + (self.lower_right_tile_pos[0] - self.upper_left_tile_pos[0]) * relative_mouse_x
         tile_mouse_y = self.upper_left_tile_pos[1] + (self.lower_right_tile_pos[1] - self.upper_left_tile_pos[1]) * relative_mouse_y
 
-        coordinate_mouse_pos = osm_to_decimal(tile_mouse_x, tile_mouse_y, round(self.zoom))
+        bounded_x, bounded_y = unbounded_osm_to_osm(tile_mouse_x, tile_mouse_y, round(self.zoom))
+        coordinate_mouse_pos = osm_to_decimal(bounded_x, bounded_y, round(self.zoom))
         return coordinate_mouse_pos
 
     def mouse_right_click(self, event):
