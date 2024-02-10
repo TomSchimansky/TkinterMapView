@@ -259,10 +259,10 @@ class TkinterMapView(tkinter.Frame):
 
     def get_position(self) -> tuple:
         """ returns current middle position of map widget in decimal coordinates """
-
-        return osm_to_decimal((self.lower_right_tile_pos[0] + self.upper_left_tile_pos[0]) / 2,
-                              (self.lower_right_tile_pos[1] + self.upper_left_tile_pos[1]) / 2,
-                              round(self.zoom))
+        center_x = (self.lower_right_tile_pos[0] + self.upper_left_tile_pos[0]) / 2,
+        center_y = (self.lower_right_tile_pos[1] + self.upper_left_tile_pos[1]) / 2
+        bounded_x, bounded_y = unbounded_osm_to_osm(center_x, center_y, round(self.zoom))
+        return osm_to_decimal(bounded_x, bounded_y, round(self.zoom))
 
     def fit_bounding_box(self, position_top_left: Tuple[float, float], position_bottom_right: Tuple[float, float]):
         # wait 200ms till method is called, because dimensions have to update first
@@ -872,9 +872,9 @@ class TkinterMapView(tkinter.Frame):
 
         mouse_tile_pos_x = self.upper_left_tile_pos[0] + (self.lower_right_tile_pos[0] - self.upper_left_tile_pos[0]) * relative_pointer_x
         mouse_tile_pos_y = self.upper_left_tile_pos[1] + (self.lower_right_tile_pos[1] - self.upper_left_tile_pos[1]) * relative_pointer_y
-
-        current_deg_mouse_position = osm_to_decimal(mouse_tile_pos_x,
-                                                    mouse_tile_pos_y,
+        bounded_x, bounded_y = unbounded_osm_to_osm(mouse_tile_pos_x, mouse_tile_pos_y, round(self.zoom))
+        current_deg_mouse_position = osm_to_decimal(bounded_x,
+                                                    bounded_y,
                                                     round(self.zoom))
         self.zoom = zoom
 
