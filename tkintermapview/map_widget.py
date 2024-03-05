@@ -32,7 +32,7 @@ class TkinterMapView(tkinter.Frame):
                  database_path: str = None,
                  use_database_only: bool = False,
                  max_zoom: int = 19,
-                 proxies: dict = {}
+                 proxies: dict = {},
                  **kwargs):
         super().__init__(*args, **kwargs)
 
