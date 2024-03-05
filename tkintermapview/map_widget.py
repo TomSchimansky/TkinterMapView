@@ -32,6 +32,7 @@ class TkinterMapView(tkinter.Frame):
                  database_path: str = None,
                  use_database_only: bool = False,
                  max_zoom: int = 19,
+                 proxies: dict = {}
                  **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -41,6 +42,7 @@ class TkinterMapView(tkinter.Frame):
         self.height = height
         self.corner_radius = corner_radius if corner_radius <= 30 else 30  # corner_radius can't be greater than 30
         self.configure(width=self.width, height=self.height)
+        self.proxies = proxies
 
         # detect color of master widget for rounded corners
         if bg_color is None:
@@ -493,11 +495,11 @@ class TkinterMapView(tkinter.Frame):
         # try to get the tile from the server
         try:
             url = self.tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
-            image = Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).raw)
+            image = Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}, proxies=self.proxies).raw)
 
             if self.overlay_tile_server is not None:
                 url = self.overlay_tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
-                image_overlay = Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).raw)
+                image_overlay = Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}, proxies=self.proxies).raw)
                 image = image.convert("RGBA")
                 image_overlay = image_overlay.convert("RGBA")
 
