@@ -502,7 +502,7 @@ class TkinterMapView(tkinter.Frame):
                 image_overlay = image_overlay.convert("RGBA")
 
                 if image_overlay.size is not (self.tile_size, self.tile_size):
-                    image_overlay = image_overlay.resize((self.tile_size, self.tile_size), Image.ANTIALIAS)
+                    image_overlay = image_overlay.resize((self.tile_size, self.tile_size), Image.LANCZOS)
 
                 image.paste(image_overlay, (0, 0), image_overlay)
 
