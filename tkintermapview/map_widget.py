@@ -308,6 +308,12 @@ class TkinterMapView(tkinter.Frame):
     def set_position(self, deg_x, deg_y, text=None, marker=False, **kwargs) -> CanvasPositionMarker:
         """ set new middle position of map in decimal coordinates """
 
+        # Handle wrapping around the 180th meridian
+        if deg_x > 180:
+            deg_x -= 360
+        elif deg_x < -180:
+            deg_x += 360
+
         # convert given decimal coordinates to OSM coordinates and set corner positions accordingly
         current_tile_position = decimal_to_osm(deg_x, deg_y, round(self.zoom))
         self.upper_left_tile_pos = (current_tile_position[0] - ((self.width / 2) / self.tile_size),
@@ -326,7 +332,7 @@ class TkinterMapView(tkinter.Frame):
         # self.draw_move() enough?
 
         return marker_object
-
+        
     def set_address(self, address_string: str, marker: bool = False, text: str = None, **kwargs) -> CanvasPositionMarker:
         """ Function uses geocode service of OpenStreetMap (Nominatim).
             https://geocoder.readthedocs.io/providers/OpenStreetMap.html """
@@ -726,6 +732,14 @@ class TkinterMapView(tkinter.Frame):
                             del self.canvas_tile_array[-1][y]
                         del self.canvas_tile_array[-1]
 
+            # Handle wrapping around the 180th meridian
+            for row in self.canvas_tile_array:
+                for tile in row:
+                    if tile.tile_name_position[0] > 2 ** round(self.zoom):
+                        tile.tile_name_position = (tile.tile_name_position[0] - 2 ** round(self.zoom), tile.tile_name_position[1])
+                    elif tile.tile_name_position[0] < 0:
+                        tile.tile_name_position = (tile.tile_name_position[0] + 2 ** round(self.zoom), tile.tile_name_position[1])
+
             # draw all canvas tiles
             for x_pos in range(len(self.canvas_tile_array)):
                 for y_pos in range(len(self.canvas_tile_array[0])):
@@ -758,6 +772,12 @@ class TkinterMapView(tkinter.Frame):
 
                     tile_name_position = upper_left_x + x_pos, upper_left_y + y_pos
 
+                    # Handle wrapping around the 180th meridian
+                    if tile_name_position[0] > 2 ** round(self.zoom):
+                        tile_name_position = (tile_name_position[0] - 2 ** round(self.zoom), tile_name_position[1])
+                    elif tile_name_position[0] < 0:
+                        tile_name_position = (tile_name_position[0] + 2 ** round(self.zoom), tile_name_position[1])
+
                     image = self.get_tile_image_from_cache(round(self.zoom), *tile_name_position)
                     if image is False:
                         image = self.not_loaded_tile_image
@@ -770,6 +790,7 @@ class TkinterMapView(tkinter.Frame):
                                        round((self.upper_left_tile_pos[1] + self.lower_right_tile_pos[1]) / 2))
 
             self.draw_move(called_after_zoom=True)
+
 
     def mouse_move(self, event):
         # calculate moving difference from last mouse position
@@ -917,9 +938,15 @@ class TkinterMapView(tkinter.Frame):
         if self.lower_right_tile_pos[1] > 2 ** round(self.zoom):
             diff_y -= self.lower_right_tile_pos[1] - (2 ** round(self.zoom))
 
+        # Handle wrapping around the 180th meridian
+        if self.upper_left_tile_pos[0] > 2 ** round(self.zoom):
+            self.upper_left_tile_pos = (self.upper_left_tile_pos[0] - 2 ** round(self.zoom), self.upper_left_tile_pos[1])
+        if self.lower_right_tile_pos[0] < 0:
+            self.lower_right_tile_pos = (self.lower_right_tile_pos[0] + 2 ** round(self.zoom), self.lower_right_tile_pos[1])
+
         self.upper_left_tile_pos = self.upper_left_tile_pos[0] + diff_x, self.upper_left_tile_pos[1] + diff_y
         self.lower_right_tile_pos = self.lower_right_tile_pos[0] + diff_x, self.lower_right_tile_pos[1] + diff_y
-
+        
     def button_zoom_in(self):
         # zoom into middle of map
         self.set_zoom(self.zoom + 1, relative_pointer_x=0.5, relative_pointer_y=0.5)
