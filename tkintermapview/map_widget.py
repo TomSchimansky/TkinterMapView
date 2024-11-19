@@ -927,3 +927,7 @@ class TkinterMapView(tkinter.Frame):
     def button_zoom_out(self):
         # zoom out of middle of map
         self.set_zoom(self.zoom - 1, relative_pointer_x=0.5, relative_pointer_y=0.5)
+
+    def show_zoom_buttons(self, show: bool = True):
+        self.button_zoom_in.set_visibility(show)
+        self.button_zoom_out.set_visibility(show)
