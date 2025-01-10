@@ -2,7 +2,6 @@ import requests
 import math
 import threading
 import tkinter
-import tkinter.ttk as ttk
 import tkinter.messagebox
 import time
 import PIL
@@ -17,13 +16,13 @@ from functools import partial
 
 from .canvas_position_marker import CanvasPositionMarker
 from .canvas_tile import CanvasTile
+from .map_widget_modules.event_manager import EventManager
 from .state.mouse_state import MouseState
 from .utility_functions import decimal_to_osm, osm_to_decimal
 from .canvas_button import CanvasButton
 from .canvas_path import CanvasPath
 from .canvas_polygon import CanvasPolygon
 from .utils.tkinter_utils import get_background_color
-
 
 
 class TkinterMapView(tkinter.Frame):
@@ -47,7 +46,6 @@ class TkinterMapView(tkinter.Frame):
 
         # detect color of master widget for rounded corners
         self.bg_color = bg_color or get_background_color(self.master)
-
         self.grid_rowconfigure(0, weight=1)  # configure 1x1 grid system
         self.grid_columnconfigure(0, weight=1)
 
@@ -57,12 +55,13 @@ class TkinterMapView(tkinter.Frame):
                                      height=self.height)
         self.canvas.grid(row=0, column=0, sticky="nsew")
 
+
         # zoom buttons
         self.button_zoom_in = CanvasButton(self, (20, 20), text="+", command=self.button_zoom_in)
         self.button_zoom_out = CanvasButton(self, (20, 60), text="-", command=self.button_zoom_out)
-
-        self._bind_mouse_events()
-        self._mouse_state = MouseState()
+        self._event_manager = EventManager(self)
+        #self._bind_mouse_events()
+        #self._mouse_state = MouseState()
 
         # movement fading
         self.fading_possible: bool = True
@@ -124,16 +123,6 @@ class TkinterMapView(tkinter.Frame):
 
         self.draw_rounded_corners()
 
-    def _bind_mouse_events(self):
-        # bind events for mouse button pressed, mouse movement, and scrolling
-        self.canvas.bind("<B1-Motion>", self.mouse_move)
-        self.canvas.bind("<Button-1>", self.mouse_click)
-        self.canvas.bind("<ButtonRelease-1>", self.mouse_release)
-        self.canvas.bind("<MouseWheel>", self.mouse_zoom)
-        self.canvas.bind("<Button-4>", self.mouse_zoom)
-        self.canvas.bind("<Button-5>", self.mouse_zoom)
-        self.bind('<Configure>', self.update_dimensions)
-
     def destroy(self):
         self.running = False
         super().destroy()
@@ -157,17 +146,6 @@ class TkinterMapView(tkinter.Frame):
                                    style=tkinter.ARC, tag="corner", width=10, outline=self.bg_color, start=-270)
             self.canvas.create_arc(self.width - 2 * radius + 5 + pos_corr, -5, self.width + 5 + pos_corr, 2 * radius - 5,
                                    style=tkinter.ARC, tag="corner", width=10, outline=self.bg_color, start=0)
-
-    def update_dimensions(self, event):
-        # only redraw if dimensions changed (for performance)
-        if self.width != event.width or self.height != event.height:
-            self.width = event.width
-            self.height = event.height
-            self.min_zoom = math.ceil(math.log2(math.ceil(self.width / self.tile_size)))
-
-            self.set_zoom(self.zoom)  # call zoom to set the position vertices right
-            self.draw_move()  # call move to draw new tiles or delete tiles
-            self.draw_rounded_corners()
 
     def add_right_click_menu_command(self, label: str, command: Callable, pass_coords: bool = False) -> None:
         self.right_click_menu_commands.append({"label": label, "command": command, "pass_coords": pass_coords})
@@ -744,61 +722,6 @@ class TkinterMapView(tkinter.Frame):
 
             self.draw_move(called_after_zoom=True)
 
-    def mouse_move(self, event):
-        # calculate moving difference from last mouse position
-        mouse_move_x = self._mouse_state.last_mouse_down_position[0] - event.x
-        mouse_move_y = self._mouse_state.last_mouse_down_position[1] - event.y
-
-        # set move velocity for movement fading out
-        delta_t = time.time() - self._mouse_state.last_mouse_down_time
-        if delta_t == 0:
-            self.move_velocity = (0, 0)
-        else:
-            self.move_velocity = (mouse_move_x / delta_t, mouse_move_y / delta_t)
-
-        # save current mouse position for next move event
-        self._mouse_state.last_mouse_down_position = (event.x, event.y)
-        self._mouse_state.last_mouse_down_time = time.time()
-
-        # calculate exact tile size of widget
-        tile_x_range = self.lower_right_tile_pos[0] - self.upper_left_tile_pos[0]
-        tile_y_range = self.lower_right_tile_pos[1] - self.upper_left_tile_pos[1]
-
-        # calculate the movement in tile coordinates
-        tile_move_x = (mouse_move_x / self.width) * tile_x_range
-        tile_move_y = (mouse_move_y / self.height) * tile_y_range
-
-        # calculate new corner tile positions
-        self.lower_right_tile_pos = (self.lower_right_tile_pos[0] + tile_move_x, self.lower_right_tile_pos[1] + tile_move_y)
-        self.upper_left_tile_pos = (self.upper_left_tile_pos[0] + tile_move_x, self.upper_left_tile_pos[1] + tile_move_y)
-
-        self.check_map_border_crossing()
-        self.draw_move()
-
-    def mouse_click(self, event):
-        self.fading_possible = False
-
-        self._mouse_state.mouse_click_position = (event.x, event.y)
-
-        # save mouse position where mouse is pressed down for moving
-        self._mouse_state.last_mouse_down_position = (event.x, event.y)
-        self._mouse_state.last_mouse_down_time = time.time()
-
-    def mouse_release(self, event):
-        self.fading_possible = True
-        self.last_move_time = time.time()
-
-        # check if mouse moved after mouse click event
-        if self._mouse_state.mouse_click_position == (event.x, event.y):
-            # mouse didn't move
-            if self._mouse_state.map_click_callback is not None:
-                # get decimal coords of current mouse position
-                coordinate_mouse_pos = self.convert_canvas_coords_to_decimal_coords(event.x, event.y)
-                self._mouse_state.map_click_callback(coordinate_mouse_pos)
-        else:
-            # mouse was moved, start fading animation
-            self.after(1, self.fading_move)
-
     def fading_move(self):
         delta_t = time.time() - self.last_move_time
         self.last_move_time = time.time()
@@ -833,10 +756,12 @@ class TkinterMapView(tkinter.Frame):
                 if self.running:
                     self.after(1, self.fading_move)
 
-    def set_zoom(self, zoom: int, relative_pointer_x: float = 0.5, relative_pointer_y: float = 0.5):
+    def set_zoom(self, zoom: float, relative_pointer_x: float = 0.5, relative_pointer_y: float = 0.5):
 
-        mouse_tile_pos_x = self.upper_left_tile_pos[0] + (self.lower_right_tile_pos[0] - self.upper_left_tile_pos[0]) * relative_pointer_x
-        mouse_tile_pos_y = self.upper_left_tile_pos[1] + (self.lower_right_tile_pos[1] - self.upper_left_tile_pos[1]) * relative_pointer_y
+        mouse_tile_pos_x = self.upper_left_tile_pos[0] + (
+                self.lower_right_tile_pos[0] - self.upper_left_tile_pos[0]) * relative_pointer_x
+        mouse_tile_pos_y = self.upper_left_tile_pos[1] + (
+                self.lower_right_tile_pos[1] - self.upper_left_tile_pos[1]) * relative_pointer_y
 
         current_deg_mouse_position = osm_to_decimal(mouse_tile_pos_x,
                                                     mouse_tile_pos_y,
@@ -860,23 +785,6 @@ class TkinterMapView(tkinter.Frame):
             self.check_map_border_crossing()
             self.draw_zoom()
             self.last_zoom = round(self.zoom)
-
-    def mouse_zoom(self, event):
-        relative_mouse_x = event.x / self.width  # mouse pointer position on map (x=[0..1], y=[0..1])
-        relative_mouse_y = event.y / self.height
-
-        if sys.platform == "darwin":
-            new_zoom = self.zoom + event.delta * 0.1
-        elif sys.platform.startswith("win"):
-            new_zoom = self.zoom + event.delta * 0.01
-        elif event.num == 4:
-            new_zoom = self.zoom + 1
-        elif event.num == 5:
-            new_zoom = self.zoom - 1
-        else:
-            new_zoom = self.zoom + event.delta * 0.1
-
-        self.set_zoom(new_zoom, relative_pointer_x=relative_mouse_x, relative_pointer_y=relative_mouse_y)
 
     def check_map_border_crossing(self):
         diff_x, diff_y = 0, 0
