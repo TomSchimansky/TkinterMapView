@@ -4,6 +4,7 @@ import time
 
 from .protocols import MapWidgetProtocol
 from ..state.mouse_state import MouseState
+from ..utils.enums import MouseButton
 
 
 class EventManager:
@@ -75,21 +76,19 @@ class EventManager:
 
     def mouse_zoom(self, event):
         m = self.map_widget
-        relative_mouse_x = event.x / m.width  # mouse pointer position on map (x=[0..1], y=[0..1])
-        relative_mouse_y = event.y / m.height
+        rel_x, rel_y = event.x / m.width, event.y / m.height
+        scale_factor = 0.1 if sys.platform == 'darwin' else 0.01
 
-        if sys.platform == "darwin":
-            new_zoom = m.zoom + event.delta * 0.1
-        elif sys.platform.startswith("win"):
-            new_zoom = m.zoom + event.delta * 0.01
-        elif event.num == 4:
+        if event.delta:  # For platforms using `event.delta`
+            new_zoom = m.zoom + event.delta * scale_factor
+        elif event.num == MouseButton.SCROLL_UP.value:
             new_zoom = m.zoom + 1
-        elif event.num == 5:
+        elif event.num == MouseButton.SCROLL_DOWN.value:
             new_zoom = m.zoom - 1
         else:
-            new_zoom = m.zoom + event.delta * 0.1
+            return  # Ignore unsupported events
 
-        m.set_zoom(new_zoom, relative_pointer_x=relative_mouse_x, relative_pointer_y=relative_mouse_y)
+        m.set_zoom(new_zoom, relative_pointer_x=rel_x, relative_pointer_y=rel_y)
 
     def update_dimensions(self, event):
         m = self.map_widget
@@ -102,4 +101,3 @@ class EventManager:
             m.set_zoom(m.zoom)  # call zoom to set the position vertices right
             m.draw_move()  # call move to draw new tiles or delete tiles
             m.draw_rounded_corners()
-

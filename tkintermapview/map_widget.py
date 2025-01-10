@@ -58,6 +58,7 @@ class TkinterMapView(tkinter.Frame):
         # zoom buttons
         self.button_zoom_in = CanvasButton(self, (20, 20), text="+", command=self.button_zoom_in)
         self.button_zoom_out = CanvasButton(self, (20, 60), text="-", command=self.button_zoom_out)
+
         self._event_manager = EventManager(self)
 
         # movement fading
@@ -805,3 +806,9 @@ class TkinterMapView(tkinter.Frame):
     def button_zoom_out(self):
         # zoom out of middle of map
         self.set_zoom(self.zoom - 1, relative_pointer_x=0.5, relative_pointer_y=0.5)
+
+    def after(self, ms: int, func: Callable = None, *args: Any) -> str:
+        return super().after(ms, func, *args)
+
+    def bind(self, sequence=None, func: Callable = None, add: str = None) -> str:
+        return super().bind(sequence, func, add)
