@@ -11,7 +11,7 @@ import sqlite3
 import pyperclip
 import geocoder
 from PIL import Image, ImageTk
-from typing import Callable, List, Dict, Union, Tuple
+from typing import Callable, List, Dict, Union, Tuple, Any
 from functools import partial
 
 from .canvas_position_marker import CanvasPositionMarker
@@ -53,7 +53,6 @@ class TkinterMapView(tkinter.Frame):
                                      width=self.width,
                                      height=self.height)
         self.canvas.grid(row=0, column=0, sticky="nsew")
-
 
         # zoom buttons
         self.button_zoom_in = CanvasButton(self, (20, 20), text="+", command=self.button_zoom_in)
@@ -128,22 +127,21 @@ class TkinterMapView(tkinter.Frame):
     def draw_rounded_corners(self):
         self.canvas.delete("corner")
 
-        if sys.platform.startswith("win"):
-            pos_corr = -1
-        else:
-            pos_corr = 0
+        pos_corr = -1 if sys.platform.startswith("win") else 0
 
         if self.corner_radius > 0:
             radius = self.corner_radius
-            self.canvas.create_arc(self.width - 2 * radius + 5 + pos_corr, self.height - 2 * radius + 5 + pos_corr,
-                                   self.width + 5 + pos_corr, self.height + 5 + pos_corr,
-                                   style=tkinter.ARC, tag="corner", width=10, outline=self.bg_color, start=-90)
-            self.canvas.create_arc(2 * radius - 5, self.height - 2 * radius + 5 + pos_corr, -5, self.height + 5 + pos_corr,
-                                   style=tkinter.ARC, tag="corner", width=10, outline=self.bg_color, start=180)
-            self.canvas.create_arc(-5, -5, 2 * radius - 5, 2 * radius - 5,
-                                   style=tkinter.ARC, tag="corner", width=10, outline=self.bg_color, start=-270)
-            self.canvas.create_arc(self.width - 2 * radius + 5 + pos_corr, -5, self.width + 5 + pos_corr, 2 * radius - 5,
-                                   style=tkinter.ARC, tag="corner", width=10, outline=self.bg_color, start=0)
+            coords = [
+                (self.width - 2 * radius + 5 + pos_corr, self.height - 2 * radius + 5 + pos_corr,
+                 self.width + 5 + pos_corr, self.height + 5 + pos_corr, -90),
+                (2 * radius - 5, self.height - 2 * radius + 5 + pos_corr, -5, self.height + 5 + pos_corr, 180),
+                (-5, -5, 2 * radius - 5, 2 * radius - 5, -270),
+                (self.width - 2 * radius + 5 + pos_corr, -5, self.width + 5 + pos_corr, 2 * radius - 5, 0)
+            ]
+
+            for x1, y1, x2, y2, start in coords:
+                self.canvas.create_arc(x1, y1, x2, y2, style=tkinter.ARC, tag="corner", width=10, outline=self.bg_color,
+                                       start=start)
 
     def add_right_click_menu_command(self, label: str, command: Callable, pass_coords: bool = False) -> None:
         self.right_click_menu_commands.append({"label": label, "command": command, "pass_coords": pass_coords})
