@@ -1,3 +1,9 @@
+**This is a fork of the original repository [TkinterMapView](https://github.com/TomSchimansky/TkinterMapView) by TomSchimansky.
+The original repository is dormant and the maintainer does not react much to issues or pull requests.
+In this fork I will try to refactor the code and fix some issues.
+It might end up as a completely different project.**
+
+
 ![PyPI](https://img.shields.io/pypi/v/tkintermapview)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/tkintermapview?color=green&label=pip%20downloads)
 ![PyPI - License](https://img.shields.io/pypi/l/customtkinter)
