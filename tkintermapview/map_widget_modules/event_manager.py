@@ -1,14 +1,16 @@
 import math
 import sys
 import time
-from ..map_widget import TkinterMapView
+
+from .protocols import MapWidgetProtocol
 from ..state.mouse_state import MouseState
 
 
 class EventManager:
-    def __init__(self, map_widget: TkinterMapView):
+    def __init__(self, map_widget: MapWidgetProtocol):
         self.map_widget = map_widget
         self._mouse_state = MouseState()
+        self._bind_mouse_events()
 
     def _bind_mouse_events(self):
         m = self.map_widget
@@ -19,6 +21,10 @@ class EventManager:
         m.canvas.bind("<Button-4>", self.mouse_zoom)
         m.canvas.bind("<Button-5>", self.mouse_zoom)
         m.bind('<Configure>', self.update_dimensions)
+
+    @property
+    def mouse_state(self) -> MouseState:
+        return self._mouse_state
 
     def mouse_move(self, event):
         m = self.map_widget

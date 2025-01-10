@@ -17,7 +17,6 @@ from functools import partial
 from .canvas_position_marker import CanvasPositionMarker
 from .canvas_tile import CanvasTile
 from .map_widget_modules.event_manager import EventManager
-from .state.mouse_state import MouseState
 from .utility_functions import decimal_to_osm, osm_to_decimal
 from .canvas_button import CanvasButton
 from .canvas_path import CanvasPath
@@ -60,8 +59,6 @@ class TkinterMapView(tkinter.Frame):
         self.button_zoom_in = CanvasButton(self, (20, 20), text="+", command=self.button_zoom_in)
         self.button_zoom_out = CanvasButton(self, (20, 60), text="-", command=self.button_zoom_out)
         self._event_manager = EventManager(self)
-        #self._bind_mouse_events()
-        #self._mouse_state = MouseState()
 
         # movement fading
         self.fading_possible: bool = True
@@ -151,7 +148,7 @@ class TkinterMapView(tkinter.Frame):
         self.right_click_menu_commands.append({"label": label, "command": command, "pass_coords": pass_coords})
 
     def add_left_click_map_command(self, callback_function):
-        self._mouse_state.map_click_callback = callback_function
+        self._event_manager.mouse_state.map_click_callback = callback_function
 
     def convert_canvas_coords_to_decimal_coords(self, canvas_x: int, canvas_y: int) -> tuple:
         relative_mouse_x = canvas_x / self.canvas.winfo_width()
