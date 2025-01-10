@@ -38,7 +38,7 @@ def _get_background_ttk(value: Misc) -> str:
 
 
 def _get_background_legacy(value: LegacyProtocol) -> str:
-    if type(value.fg_color) == tuple or type(value.fg_color) == list:
+    if isinstance(value.fg_color, Union[tuple, list]) or isinstance(value.fg_color, list):
         return value.fg_color[value._appearance_mode]
     else:
         return value.fg_color
@@ -51,8 +51,8 @@ def get_background_color(master: Union[Misc, LegacyProtocol, CustomTkinterProtoc
         case "ttk":
             return _get_background_ttk(master)
         case "customtkinter":
-            master._apply_appearance_mode(master.cget("fg_color"))
+            return master._apply_appearance_mode(master.cget("fg_color"))
         case "customtkinter_legacy":
             return _get_background_legacy(master)
         case _:
-            return _get_background_ttk(master)
+            return DEFAULT_BACKGROUND
