@@ -17,11 +17,13 @@ from functools import partial
 
 from .canvas_position_marker import CanvasPositionMarker
 from .canvas_tile import CanvasTile
+from .state.mouse_state import MouseState
 from .utility_functions import decimal_to_osm, osm_to_decimal
 from .canvas_button import CanvasButton
 from .canvas_path import CanvasPath
 from .canvas_polygon import CanvasPolygon
-from .utils._tkinter_background import get_background_color
+from .utils.tkinter_utils import get_background_color
+
 
 
 class TkinterMapView(tkinter.Frame):
@@ -59,18 +61,8 @@ class TkinterMapView(tkinter.Frame):
         self.button_zoom_in = CanvasButton(self, (20, 20), text="+", command=self.button_zoom_in)
         self.button_zoom_out = CanvasButton(self, (20, 60), text="-", command=self.button_zoom_out)
 
-        # bind events for mouse button pressed, mouse movement, and scrolling
-        self.canvas.bind("<B1-Motion>", self.mouse_move)
-        self.canvas.bind("<Button-1>", self.mouse_click)
-        self.canvas.bind("<ButtonRelease-1>", self.mouse_release)
-        self.canvas.bind("<MouseWheel>", self.mouse_zoom)
-        self.canvas.bind("<Button-4>", self.mouse_zoom)
-        self.canvas.bind("<Button-5>", self.mouse_zoom)
-        self.bind('<Configure>', self.update_dimensions)
-        self.last_mouse_down_position: Union[tuple, None] = None
-        self.last_mouse_down_time: Union[float, None] = None
-        self.mouse_click_position: Union[tuple, None] = None
-        self.map_click_callback: Union[Callable, None] = None  # callback function for left click on map
+        self._bind_mouse_events()
+        self._mouse_state = MouseState()
 
         # movement fading
         self.fading_possible: bool = True
@@ -132,6 +124,16 @@ class TkinterMapView(tkinter.Frame):
 
         self.draw_rounded_corners()
 
+    def _bind_mouse_events(self):
+        # bind events for mouse button pressed, mouse movement, and scrolling
+        self.canvas.bind("<B1-Motion>", self.mouse_move)
+        self.canvas.bind("<Button-1>", self.mouse_click)
+        self.canvas.bind("<ButtonRelease-1>", self.mouse_release)
+        self.canvas.bind("<MouseWheel>", self.mouse_zoom)
+        self.canvas.bind("<Button-4>", self.mouse_zoom)
+        self.canvas.bind("<Button-5>", self.mouse_zoom)
+        self.bind('<Configure>', self.update_dimensions)
+
     def destroy(self):
         self.running = False
         super().destroy()
@@ -171,7 +173,7 @@ class TkinterMapView(tkinter.Frame):
         self.right_click_menu_commands.append({"label": label, "command": command, "pass_coords": pass_coords})
 
     def add_left_click_map_command(self, callback_function):
-        self.map_click_callback = callback_function
+        self._mouse_state.map_click_callback = callback_function
 
     def convert_canvas_coords_to_decimal_coords(self, canvas_x: int, canvas_y: int) -> tuple:
         relative_mouse_x = canvas_x / self.canvas.winfo_width()
@@ -744,19 +746,19 @@ class TkinterMapView(tkinter.Frame):
 
     def mouse_move(self, event):
         # calculate moving difference from last mouse position
-        mouse_move_x = self.last_mouse_down_position[0] - event.x
-        mouse_move_y = self.last_mouse_down_position[1] - event.y
+        mouse_move_x = self._mouse_state.last_mouse_down_position[0] - event.x
+        mouse_move_y = self._mouse_state.last_mouse_down_position[1] - event.y
 
         # set move velocity for movement fading out
-        delta_t = time.time() - self.last_mouse_down_time
+        delta_t = time.time() - self._mouse_state.last_mouse_down_time
         if delta_t == 0:
             self.move_velocity = (0, 0)
         else:
             self.move_velocity = (mouse_move_x / delta_t, mouse_move_y / delta_t)
 
         # save current mouse position for next move event
-        self.last_mouse_down_position = (event.x, event.y)
-        self.last_mouse_down_time = time.time()
+        self._mouse_state.last_mouse_down_position = (event.x, event.y)
+        self._mouse_state.last_mouse_down_time = time.time()
 
         # calculate exact tile size of widget
         tile_x_range = self.lower_right_tile_pos[0] - self.upper_left_tile_pos[0]
@@ -776,23 +778,23 @@ class TkinterMapView(tkinter.Frame):
     def mouse_click(self, event):
         self.fading_possible = False
 
-        self.mouse_click_position = (event.x, event.y)
+        self._mouse_state.mouse_click_position = (event.x, event.y)
 
         # save mouse position where mouse is pressed down for moving
-        self.last_mouse_down_position = (event.x, event.y)
-        self.last_mouse_down_time = time.time()
+        self._mouse_state.last_mouse_down_position = (event.x, event.y)
+        self._mouse_state.last_mouse_down_time = time.time()
 
     def mouse_release(self, event):
         self.fading_possible = True
         self.last_move_time = time.time()
 
         # check if mouse moved after mouse click event
-        if self.mouse_click_position == (event.x, event.y):
+        if self._mouse_state.mouse_click_position == (event.x, event.y):
             # mouse didn't move
-            if self.map_click_callback is not None:
+            if self._mouse_state.map_click_callback is not None:
                 # get decimal coords of current mouse position
                 coordinate_mouse_pos = self.convert_canvas_coords_to_decimal_coords(event.x, event.y)
-                self.map_click_callback(coordinate_mouse_pos)
+                self._mouse_state.map_click_callback(coordinate_mouse_pos)
         else:
             # mouse was moved, start fading animation
             self.after(1, self.fading_move)
