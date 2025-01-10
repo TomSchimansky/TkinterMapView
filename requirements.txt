@@ -1,7 +1,7 @@
-customtkinter~=5.0.3
-requests==2.26.0
-pillow~=9.3.0
-future~=0.18.2
+customtkinter~=5.2.2
+requests==2.32.3
+pillow~=11.1.0
 geocoder
-pywin32; platform_system=="Windows"
-pyperclip~=1.8.2
+#pywin32; platform_system=="Windows"
+pyperclip~=1.9.0
+geopy==2.4.1

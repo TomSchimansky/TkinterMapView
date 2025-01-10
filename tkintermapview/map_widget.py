@@ -21,6 +21,7 @@ from .utility_functions import decimal_to_osm, osm_to_decimal
 from .canvas_button import CanvasButton
 from .canvas_path import CanvasPath
 from .canvas_polygon import CanvasPolygon
+from .utils._tkinter_background import get_background_color
 
 
 class TkinterMapView(tkinter.Frame):
@@ -43,42 +44,12 @@ class TkinterMapView(tkinter.Frame):
         self.configure(width=self.width, height=self.height)
 
         # detect color of master widget for rounded corners
-        if bg_color is None:
-            # map widget is placed in a CTkFrame from customtkinter library
-            if (hasattr(self.master, "canvas") and hasattr(self.master, "fg_color")) or (hasattr(self.master, "_canvas") and hasattr(self.master, "_fg_color")):
-                # customtkinter version >=5.0.0
-                if hasattr(self.master, "_apply_appearance_mode"):
-                    self.bg_color: str = self.master._apply_appearance_mode(self.master.cget("fg_color"))
-                # customtkinter version <=4.6.3
-                elif hasattr(self.master, "fg_color"):
-                    if type(self.master.fg_color) == tuple or type(self.master.fg_color) == list:
-                        self.bg_color: str = self.master.fg_color[self.master._appearance_mode]
-                    else:
-                        self.bg_color: str = self.master.fg_color
-
-            # map widget is placed on a tkinter.Frame or tkinter.Tk
-            elif isinstance(self.master, (tkinter.Frame, tkinter.Tk, tkinter.Toplevel, tkinter.LabelFrame)):
-                self.bg_color: str = self.master.cget("bg")
-
-            # map widget is placed in a ttk widget
-            elif isinstance(self.master, (ttk.Frame, ttk.LabelFrame, ttk.Notebook)):
-                try:
-                    ttk_style = ttk.Style()
-                    self.bg_color = ttk_style.lookup(self.master.winfo_class(), 'background')
-                except Exception:
-                    self.bg_color: str = "#000000"
-
-            # map widget is placed on an unknown widget
-            else:
-                self.bg_color: str = "#000000"
-        else:
-            self.bg_color = bg_color
+        self.bg_color = bg_color or get_background_color(self.master)
 
         self.grid_rowconfigure(0, weight=1)  # configure 1x1 grid system
         self.grid_columnconfigure(0, weight=1)
 
         self.canvas = tkinter.Canvas(master=self,
-                                     highlightthicknes=0,
                                      bg="#F1EFEA",
                                      width=self.width,
                                      height=self.height)
