@@ -5,3 +5,5 @@ future~=0.18.2
 geocoder
 pywin32; platform_system=="Windows"
 pyperclip~=1.8.2
+certifi
+geopy
