@@ -40,14 +40,3 @@ def convert_coordinates_to_city(deg_x: float, deg_y: float) -> str:
 def convert_coordinates_to_country(deg_x: float, deg_y: float) -> str:
     """ returns country name """
     return geocoder.osm([deg_x, deg_y], method="reverse").country
-
-
-def convert_address_to_coordinates(address_string: str) -> tuple:
-    """ returns address object for given coords or None if no address found """
-
-    result = geocoder.osm(address_string)
-
-    if result.ok:
-        return tuple(result.latlng)
-    else:
-        return None

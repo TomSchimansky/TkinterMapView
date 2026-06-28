@@ -10,7 +10,10 @@ import sys
 import io
 import sqlite3
 import pyperclip
-import geocoder
+import ssl
+import certifi
+from geopy.geocoders import Nominatim
+from geopy.exc import GeocoderTimedOut, GeocoderUnavailable
 from PIL import Image, ImageTk
 from typing import Callable, List, Dict, Union, Tuple
 from functools import partial
@@ -331,17 +334,32 @@ class TkinterMapView(tkinter.Frame):
         """ Function uses geocode service of OpenStreetMap (Nominatim).
             https://geocoder.readthedocs.io/providers/OpenStreetMap.html """
 
-        result = geocoder.osm(address_string)
+        ssl_ctx = ssl.create_default_context(cafile=certifi.where())
+        geolocator = Nominatim(user_agent="TkinterMapView/1.0 (contact@customtkinter.tomschimansky.com)", ssl_context=ssl_ctx)
 
-        if result.ok:
+        try:
+            location = geolocator.geocode(address_string)
+        except (GeocoderTimedOut, GeocoderUnavailable) as e:
+            print(f"Geocoding error: {e}")
+            return False
 
-            # determine zoom level for result by bounding box
-            if hasattr(result, "bbox"):
+        if location:
+
+            # 2. Extract bounding box from the raw Nominatim response
+            # Nominatim format: ['lat_min', 'lat_max', 'lon_min', 'lon_max']
+            raw_bbox = location.raw.get("boundingbox")
+
+            if raw_bbox:
                 zoom_not_possible = True
 
+                # Convert string coordinates to floats and map them to SW / NE
+                lat_min, lat_max, lon_min, lon_max = map(float, raw_bbox)
+                southwest = (lat_min, lon_min)
+                northeast = (lat_max, lon_max)
+
                 for zoom in range(self.min_zoom, self.max_zoom + 1):
-                    lower_left_corner = decimal_to_osm(*result.bbox['southwest'], zoom)
-                    upper_right_corner = decimal_to_osm(*result.bbox['northeast'], zoom)
+                    lower_left_corner = decimal_to_osm(*southwest, zoom)
+                    upper_right_corner = decimal_to_osm(*northeast, zoom)
                     tile_width = upper_right_corner[0] - lower_left_corner[0]
 
                     if tile_width > math.floor(self.width / self.tile_size):
@@ -354,13 +372,14 @@ class TkinterMapView(tkinter.Frame):
             else:
                 self.set_zoom(10)
 
+            # 3. Retrieve the formatted address text
             if text is None:
-                try:
-                    text = result.geojson['features'][0]['properties']['address']
-                except:
-                    text = address_string
+                # geopy provides a beautifully formatted address out of the box
+                text = location.address if location.address else address_string
 
-            return self.set_position(*result.latlng, marker=marker, text=text, **kwargs)
+            # 4. Set the position using the extracted coordinates
+            return self.set_position(location.latitude, location.longitude, marker=marker, text=text, **kwargs)
+
         else:
             return False
 
