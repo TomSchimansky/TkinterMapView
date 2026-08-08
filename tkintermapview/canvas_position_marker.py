@@ -124,9 +124,9 @@ class CanvasPositionMarker:
         widget_tile_width = self.map_widget.lower_right_tile_pos[0] - self.map_widget.upper_left_tile_pos[0]
         widget_tile_height = self.map_widget.lower_right_tile_pos[1] - self.map_widget.upper_left_tile_pos[1]
 
-        canvas_pos_x = ((tile_position[0] - self.map_widget.upper_left_tile_pos[0]) / widget_tile_width) * self.map_widget.width
-        canvas_pos_y = ((tile_position[1] - self.map_widget.upper_left_tile_pos[1]) / widget_tile_height) * self.map_widget.height
-
+        canvas_pos_x = ((tile_position[0] - self.map_widget.upper_left_tile_pos_bounded[0]) / widget_tile_width) * self.map_widget.width
+        canvas_pos_y = ((tile_position[1] - self.map_widget.upper_left_tile_pos_bounded[1]) / widget_tile_height) * self.map_widget.height
+    
         return canvas_pos_x, canvas_pos_y
 
     def draw(self, event=None):

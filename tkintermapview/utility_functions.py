@@ -2,6 +2,14 @@ import geocoder
 import math
 from typing import Union
 
+def unbounded_osm_to_osm(tile_x: int, tile_y: int, zoom: int) -> int:
+    osm_tile_x = tile_x
+    max_x = int(2.0**zoom)
+    if osm_tile_x < 0:
+        osm_tile_x = (max_x - abs(tile_x) % max_x) % max_x
+    else:
+        osm_tile_x = tile_x % max_x
+    return osm_tile_x, tile_y
 
 def decimal_to_osm(lat_deg: float, lon_deg: float, zoom: int) -> tuple:
     """ converts decimal coordinates to internal OSM coordinates"""
