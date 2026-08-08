@@ -305,6 +305,9 @@ self.map_widget.set_tile_server("https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pi
 # example overlay tile server
 self.map_widget.set_overlay_tile_server("http://tiles.openseamap.org/seamark//{z}/{x}/{y}.png")  # sea-map overlay
 self.map_widget.set_overlay_tile_server("http://a.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png")  # railway infrastructure
+
+# local tile images as overlay tile server
+self.map_widget.set_overlay_tile_server("file://PATH_TO_FOLDER_WITH_TILES/{z}/{x}/{y}.png")
 ````
 ---
 
