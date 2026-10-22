@@ -9,7 +9,7 @@
 TkinterMapView is a tile based interactive map renderer widget for the python Tkinter library.
 By default, it displays the OpenStreetMap map, but you can change the tile server to
 whatever you like, and it also supports a second tile server for overlays like OpenSeaMap.
-You can set the current focus of the widget by a position or address, and place markers 
+You can set the current focus of the widget by a position or address, and place markers
 or a path on the map.
 
 The above image program is produced by the code example `map_view_simple_example.py`.
@@ -166,7 +166,7 @@ In ``examples/map_view_marker_icon_images.py`` you can find example code for the
 <img src="documentation_images/marker_with_image.png" width="500"/>
 
 With `map_widget.delete_all_marker()` all marker on the map will be deleted.
-    
+
 ---
 ### Create path from position list
 
@@ -187,7 +187,7 @@ path_1.remove_position(position)
 path_1.delete()
 ````
 With `map_widget.delete_all_path()` all path on the map will be deleted.
-    
+
 ---
 ### Create polygon from position list
 
@@ -199,7 +199,7 @@ which will get the polygon object as an argument.
 ````python
 def polygon_click(polygon):
     print(f"polygon clicked - text: {polygon.name}")
-    
+
 polygon_1 = map_widget.set_polygon([(46.0732306, 6.0095215),
                                     ...
                                     (46.3772542, 6.4160156)],
@@ -221,7 +221,7 @@ which results in the following:
 ![](documentation_images/map_view_polygon_example.png)
 
 With `map_widget.delete_all_polygon()` all polygons on the map will be deleted.
-    
+
 ---
 ### Mouse events on the map
 
@@ -232,14 +232,14 @@ You can also add other options to this menu, with the ``map_widget.add_right_cli
 def add_marker_event(coords):
     print("Add marker:", coords)
     new_marker = map_widget.set_marker(coords[0], coords[1], text="new marker")
-    
+
 
 map_widget.add_right_click_menu_command(label="Add Marker",
                                         command=add_marker_event,
                                         pass_coords=True)
 ```
 With the `label` argument you set the text inside the menu, and if `pass_coords`
-is True, the clicked coordinates will be passed to the command function as a tuple. 
+is True, the clicked coordinates will be passed to the command function as a tuple.
 
 <img src="documentation_images/right_click_menu_example.png" width="400"/>
 
@@ -247,7 +247,7 @@ You can also assign a callback function for a left click event on the map with:
 ```python
 def left_click_event(coordinates_tuple):
     print("Left click event with coordinates:", coordinates_tuple)
-    
+
 map_widget.add_left_click_map_command(left_click_event)
 ```
 The callback function will get the decimal coordinates of the clicked location as a tuple.
@@ -308,9 +308,18 @@ self.map_widget.set_overlay_tile_server("http://a.tiles.openrailwaymap.org/stand
 ````
 ---
 
+### Use different user agent
+
+If OSM server blocks your app, it might be because of using the same `User-Agent` over and over. Change it with
+````python
+self.map_widget.set_user_agent("MyApp")
+````
+
+---
+
 ### Use offline tiles
 
-You can load tiles into a database to use them offline when there is no connection to 
+You can load tiles into a database to use them offline when there is no connection to
 the tile server. Check out [examples/load_offline_tiles.py](https://github.com/TomSchimansky/TkinterMapView/blob/main/examples/map_with_offline_tiles.py) for more information.
 
 If you then create the TkinterMapView widget you pass the database path as an argument.

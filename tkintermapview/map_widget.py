@@ -133,6 +133,7 @@ class TkinterMapView(tkinter.Frame):
         self.overlay_tile_server: Union[str, None] = None
         self.max_zoom = max_zoom  # should be set according to tile server max zoom
         self.min_zoom: int = math.ceil(math.log2(math.ceil(self.width / self.tile_size)))  # min zoom at which map completely fills widget
+        self.user_agent = "TkinterMapView"
 
         # pre caching for smoother movements (load tile images into cache at a certain radius around the pre_cache_position)
         self.pre_cache_position: Union[Tuple[float, float], None] = None
@@ -246,6 +247,9 @@ class TkinterMapView(tkinter.Frame):
 
     def set_overlay_tile_server(self, overlay_server: str):
         self.overlay_tile_server = overlay_server
+
+    def set_user_agent(self, user_agent: str):
+        self.user_agent = user_agent
 
     def set_tile_server(self, tile_server: str, tile_size: int = 256, max_zoom: int = 19):
         self.image_load_queue_tasks = []
@@ -512,11 +516,11 @@ class TkinterMapView(tkinter.Frame):
         # try to get the tile from the server
         try:
             url = self.tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
-            image = Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).raw)
+            image = Image.open(requests.get(url, stream=True, headers={"User-Agent": self.user_agent}).raw)
 
             if self.overlay_tile_server is not None:
                 url = self.overlay_tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
-                image_overlay = Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).raw)
+                image_overlay = Image.open(requests.get(url, stream=True, headers={"User-Agent": self.user_agent}).raw)
                 image = image.convert("RGBA")
                 image_overlay = image_overlay.convert("RGBA")
 
