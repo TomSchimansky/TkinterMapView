@@ -15,7 +15,7 @@ import certifi
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderUnavailable
 from PIL import Image, ImageTk
-from typing import Callable, List, Dict, Union, Tuple
+from typing import IO, Callable, List, Dict, Union, Tuple
 from functools import partial
 
 from .canvas_position_marker import CanvasPositionMarker
@@ -485,6 +485,11 @@ class TkinterMapView(tkinter.Frame):
                 for key in keys_to_delete:
                     del self.tile_image_cache[key]
 
+
+    def request_image_from_server(self, tile_server: str, zoom: int, x: int, y: int) -> IO[bytes]:
+        url = tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
+        return requests.get(url, stream=True, headers={"User-Agent": self.user_agent}).raw
+
     def request_image(self, zoom: int, x: int, y: int, db_cursor=None) -> ImageTk.PhotoImage:
 
         # if database is available check first if tile is in database, if not try to use server
@@ -515,12 +520,10 @@ class TkinterMapView(tkinter.Frame):
 
         # try to get the tile from the server
         try:
-            url = self.tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
-            image = Image.open(requests.get(url, stream=True, headers={"User-Agent": self.user_agent}).raw)
+            image = Image.open(self.request_image_from_server(self.tile_server, zoom, x, y))
 
             if self.overlay_tile_server is not None:
-                url = self.overlay_tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
-                image_overlay = Image.open(requests.get(url, stream=True, headers={"User-Agent": self.user_agent}).raw)
+                image_overlay = Image.open(self.request_image_from_server(self.overlay_tile_server, zoom, x, y))
                 image = image.convert("RGBA")
                 image_overlay = image_overlay.convert("RGBA")
 
