@@ -7,8 +7,7 @@ import sys
 import math
 from PIL import Image, UnidentifiedImageError
 
-from . import __version__
-from .utility_functions import decimal_to_osm, osm_to_decimal
+from .utility_functions import decimal_to_osm, osm_to_decimal, default_user_agent
 
 
 class OfflineLoader:
@@ -24,7 +23,7 @@ class OfflineLoader:
             self.tile_server = tile_server
 
         # OpenStreetMap does not allow downloading tiles for offline use, use a tile server that allows it
-        self.user_agent = user_agent if user_agent is not None else "TkinterMapView/" + __version__
+        self.user_agent = default_user_agent() if user_agent is None else user_agent
 
         self.max_zoom = max_zoom
 

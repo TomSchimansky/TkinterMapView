@@ -7,7 +7,7 @@ root_tk.geometry(f"{1000}x{700}")
 root_tk.title("map_view_polygon_example.py")
 
 # create map widget
-map_widget = tkintermapview.TkinterMapView(root_tk, width=1000, height=700, corner_radius=0, user_agent="TkinterMapView Example")
+map_widget = tkintermapview.TkinterMapView(root_tk, width=1000, height=700, corner_radius=0)
 map_widget.pack(fill="both", expand=True)
 
 

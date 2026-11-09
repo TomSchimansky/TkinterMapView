@@ -1,6 +1,25 @@
 import geocoder
 import math
+import os
+import re
+import sys
 from typing import Union
+
+from . import __version__
+
+
+def default_user_agent() -> str:
+    """ returns a User-Agent with the name of the running app, like "my_app (TkinterMapView/1.31)".
+        OpenStreetMap blocks requests whose User-Agent doesn't identify the app:
+        https://operations.osmfoundation.org/policies/tiles/ """
+
+    app_name = os.path.splitext(os.path.basename(sys.argv[0]))[0] if sys.argv and sys.argv[0] else ""
+    app_name = re.sub(r"[^A-Za-z0-9._-]", "", app_name).lstrip("-.")  # HTTP headers only allow some characters
+
+    if app_name:
+        return f"{app_name} (TkinterMapView/{__version__})"
+    else:
+        return f"TkinterMapView/{__version__}"
 
 
 def decimal_to_osm(lat_deg: float, lon_deg: float, zoom: int) -> tuple:
