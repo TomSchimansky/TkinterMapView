@@ -15,7 +15,7 @@ import certifi
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderUnavailable
 from PIL import Image, ImageTk
-from typing import Callable, List, Dict, Union, Tuple
+from typing import IO, Callable, List, Dict, Union, Tuple
 from functools import partial
 
 from .canvas_position_marker import CanvasPositionMarker
@@ -127,10 +127,6 @@ class TkinterMapView(tkinter.Frame):
         self.empty_tile_image = ImageTk.PhotoImage(Image.new("RGB", (self.tile_size, self.tile_size), (190, 190, 190)))  # used for zooming and moving
         self.not_loaded_tile_image = ImageTk.PhotoImage(Image.new("RGB", (self.tile_size, self.tile_size), (250, 250, 250)))  # only used when image not found on tile server
 
-        # User-Agent for all requests, by default with the name of the running app,
-        # because OpenStreetMap blocks requests that don't identify the app
-        self.user_agent = default_user_agent() if user_agent is None else user_agent
-
         # tile server and database
         self.tile_server = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         self.database_path = database_path
@@ -138,6 +134,10 @@ class TkinterMapView(tkinter.Frame):
         self.overlay_tile_server: Union[str, None] = None
         self.max_zoom = max_zoom  # should be set according to tile server max zoom
         self.min_zoom: int = math.ceil(math.log2(math.ceil(self.width / self.tile_size)))  # min zoom at which map completely fills widget
+
+        # User-Agent for all requests, by default with the name of the running app,
+        # because OpenStreetMap blocks requests that don't identify the app
+        self.user_agent = default_user_agent() if user_agent is None else user_agent
 
         # pre caching for smoother movements (load tile images into cache at a certain radius around the pre_cache_position)
         self.pre_cache_position: Union[Tuple[float, float], None] = None
@@ -251,6 +251,9 @@ class TkinterMapView(tkinter.Frame):
 
     def set_overlay_tile_server(self, overlay_server: str):
         self.overlay_tile_server = overlay_server
+
+    def set_user_agent(self, user_agent: str):
+        self.user_agent = user_agent
 
     def set_tile_server(self, tile_server: str, tile_size: int = 256, max_zoom: int = 19):
         self.image_load_queue_tasks = []
@@ -486,6 +489,11 @@ class TkinterMapView(tkinter.Frame):
                 for key in keys_to_delete:
                     del self.tile_image_cache[key]
 
+
+    def request_image_from_server(self, tile_server: str, zoom: int, x: int, y: int) -> IO[bytes]:
+        url = tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
+        return requests.get(url, stream=True, headers={"User-Agent": self.user_agent}).raw
+
     def request_image(self, zoom: int, x: int, y: int, db_cursor=None) -> ImageTk.PhotoImage:
 
         # if database is available check first if tile is in database, if not try to use server
@@ -516,12 +524,10 @@ class TkinterMapView(tkinter.Frame):
 
         # try to get the tile from the server
         try:
-            url = self.tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
-            image = Image.open(requests.get(url, stream=True, headers={"User-Agent": self.user_agent}).raw)
+            image = Image.open(self.request_image_from_server(self.tile_server, zoom, x, y))
 
             if self.overlay_tile_server is not None:
-                url = self.overlay_tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
-                image_overlay = Image.open(requests.get(url, stream=True, headers={"User-Agent": self.user_agent}).raw)
+                image_overlay = Image.open(self.request_image_from_server(self.overlay_tile_server, zoom, x, y))
                 image = image.convert("RGBA")
                 image_overlay = image_overlay.convert("RGBA")
 
@@ -951,3 +957,7 @@ class TkinterMapView(tkinter.Frame):
     def button_zoom_out(self):
         # zoom out of middle of map
         self.set_zoom(self.zoom - 1, relative_pointer_x=0.5, relative_pointer_y=0.5)
+
+    def show_zoom_buttons(self, show: bool = True):
+        self.button_zoom_in.set_visibility(show)
+        self.button_zoom_out.set_visibility(show)

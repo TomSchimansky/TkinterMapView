@@ -17,13 +17,11 @@ class OfflineLoader:
         else:
             self.db_path = path
 
+        # OpenStreetMap does not allow downloading tiles for offline use, use a tile server that allows it
         if tile_server is None:
             self.tile_server = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         else:
             self.tile_server = tile_server
-
-        # OpenStreetMap does not allow downloading tiles for offline use, use a tile server that allows it
-        self.user_agent = default_user_agent() if user_agent is None else user_agent
 
         self.max_zoom = max_zoom
 
@@ -32,6 +30,7 @@ class OfflineLoader:
         self.thread_pool = []
         self.lock = threading.Lock()
         self.number_of_threads = 50
+        self.user_agent = default_user_agent() if user_agent is None else user_agent
 
     def print_loaded_sections(self):
         # connect to database

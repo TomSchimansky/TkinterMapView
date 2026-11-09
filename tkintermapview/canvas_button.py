@@ -74,3 +74,11 @@ class CanvasButton:
         self.map_widget.canvas.tag_bind(self.canvas_text, "<Enter>", self.hover_on)
         self.map_widget.canvas.tag_bind(self.canvas_rect, "<Leave>", self.hover_off)
         self.map_widget.canvas.tag_bind(self.canvas_text, "<Leave>", self.hover_off)
+
+    def set_visibility(self, visible: bool):
+        if visible:
+            self.map_widget.canvas.itemconfigure(self.canvas_rect, state="normal")
+            self.map_widget.canvas.itemconfigure(self.canvas_text, state="normal")
+        else:
+            self.map_widget.canvas.itemconfigure(self.canvas_rect, state="hidden")
+            self.map_widget.canvas.itemconfigure(self.canvas_text, state="hidden")

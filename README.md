@@ -9,7 +9,7 @@
 TkinterMapView is a tile based interactive map renderer widget for the python Tkinter library.
 By default, it displays the OpenStreetMap map, but you can change the tile server to
 whatever you like, and it also supports a second tile server for overlays like OpenSeaMap.
-You can set the current focus of the widget by a position or address, and place markers 
+You can set the current focus of the widget by a position or address, and place markers
 or a path on the map.
 
 The above image program is produced by the code example `map_view_simple_example.py`.
@@ -47,6 +47,7 @@ https://pypi.org/project/tkintermapview/
 - [Mouse events on the map](#mouse-events-on-the-map)
 - [Utility methods](#utility-methods)
 - [Use other tile servers](#use-other-tile-servers)
+- [Use different user agent](#use-different-user-agent)
 - [Use offline tiles](#use-offline-tiles)
 
 ---
@@ -74,14 +75,6 @@ map_widget = tkintermapview.TkinterMapView(root_tk, width=800, height=600, corne
 map_widget.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
 ```
 If you also call `root_tk.mainloop()` at the end, this is already a fully working example to test the map widget.
-
-With every request to the tile server and to the address search, TkinterMapView sends a User-Agent with the
-name of your script, like `my_app (TkinterMapView/1.31)`, because OpenStreetMap blocks requests that don't
-identify the app ([tile usage policy](https://operations.osmfoundation.org/policies/tiles/)). If your app is
-used by many people, you can set your own User-Agent with the name of your app and a contact:
-```python
-map_widget = tkintermapview.TkinterMapView(root_tk, user_agent="MyApp/1.0 (contact@example.com)")
-```
 
 ---
 ### Set coordinate position
@@ -174,7 +167,7 @@ In ``examples/map_view_marker_icon_images.py`` you can find example code for the
 <img src="documentation_images/marker_with_image.png" width="500"/>
 
 With `map_widget.delete_all_marker()` all marker on the map will be deleted.
-    
+
 ---
 ### Create path from position list
 
@@ -195,7 +188,7 @@ path_1.remove_position(position)
 path_1.delete()
 ````
 With `map_widget.delete_all_path()` all path on the map will be deleted.
-    
+
 ---
 ### Create polygon from position list
 
@@ -207,7 +200,7 @@ which will get the polygon object as an argument.
 ````python
 def polygon_click(polygon):
     print(f"polygon clicked - text: {polygon.name}")
-    
+
 polygon_1 = map_widget.set_polygon([(46.0732306, 6.0095215),
                                     ...
                                     (46.3772542, 6.4160156)],
@@ -229,7 +222,7 @@ which results in the following:
 ![](documentation_images/map_view_polygon_example.png)
 
 With `map_widget.delete_all_polygon()` all polygons on the map will be deleted.
-    
+
 ---
 ### Mouse events on the map
 
@@ -240,14 +233,14 @@ You can also add other options to this menu, with the ``map_widget.add_right_cli
 def add_marker_event(coords):
     print("Add marker:", coords)
     new_marker = map_widget.set_marker(coords[0], coords[1], text="new marker")
-    
+
 
 map_widget.add_right_click_menu_command(label="Add Marker",
                                         command=add_marker_event,
                                         pass_coords=True)
 ```
 With the `label` argument you set the text inside the menu, and if `pass_coords`
-is True, the clicked coordinates will be passed to the command function as a tuple. 
+is True, the clicked coordinates will be passed to the command function as a tuple.
 
 <img src="documentation_images/right_click_menu_example.png" width="400"/>
 
@@ -255,7 +248,7 @@ You can also assign a callback function for a left click event on the map with:
 ```python
 def left_click_event(coordinates_tuple):
     print("Left click event with coordinates:", coordinates_tuple)
-    
+
 map_widget.add_left_click_map_command(left_click_event)
 ```
 The callback function will get the decimal coordinates of the clicked location as a tuple.
@@ -281,7 +274,7 @@ city = tkintermapview.convert_coordinates_to_city(51.5122057, -0.0994014)
 
 Convert decimal coords to country name:
 ```python
-country = tkintermapview.convert_coordinates_to_city(51.5122057, -0.0994014)
+country = tkintermapview.convert_coordinates_to_country(51.5122057, -0.0994014)
 # country: "United Kingdom"
 ```
 
@@ -314,11 +307,25 @@ self.map_widget.set_overlay_tile_server("https://tiles.openrailwaymap.org/standa
 ````
 ---
 
+### Use different user agent
+
+With every request to the tile server and to the address search, TkinterMapView sends a `User-Agent` with
+the name of your script, like `my_app (TkinterMapView/1.32)`, because OpenStreetMap blocks requests that don't
+identify the app ([tile usage policy](https://operations.osmfoundation.org/policies/tiles/)). If your app is
+used by many people, set your own `User-Agent` with the name of your app and a contact, when creating the
+widget or later:
+````python
+self.map_widget = tkintermapview.TkinterMapView(root_tk, user_agent="MyApp/1.0 (contact@example.com)")
+self.map_widget.set_user_agent("MyApp/1.0 (contact@example.com)")
+````
+
+---
+
 ### Use offline tiles
 
 You can load tiles into a database to use them offline when there is no connection to 
-the tile server. OpenStreetMap does not allow downloading tiles for offline use, so use a tile server
-that allows it. Check out [examples/load_offline_tiles.py](https://github.com/TomSchimansky/TkinterMapView/blob/main/examples/map_with_offline_tiles.py) for more information.
+the tile server. Check out [examples/load_offline_tiles.py](https://github.com/TomSchimansky/TkinterMapView/blob/main/examples/load_offline_tiles.py) for more information.
+OpenStreetMap does not allow downloading tiles for offline use, so use a tile server that allows it.
 
 If you then create the TkinterMapView widget you pass the database path as an argument.
 An example of this can be found here: [examples/map_with_offline_tiles.py](https://github.com/TomSchimansky/TkinterMapView/blob/main/examples/map_with_offline_tiles.py)

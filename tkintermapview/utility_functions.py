@@ -9,7 +9,7 @@ from . import __version__
 
 
 def default_user_agent() -> str:
-    """ returns a User-Agent with the name of the running app, like "my_app (TkinterMapView/1.31)".
+    """ returns a User-Agent with the name of the running app, like "my_app (TkinterMapView/1.32)".
         OpenStreetMap blocks requests whose User-Agent doesn't identify the app:
         https://operations.osmfoundation.org/policies/tiles/ """
 
