@@ -11,7 +11,7 @@ from .utility_functions import decimal_to_osm, osm_to_decimal
 
 
 class OfflineLoader:
-    def __init__(self, path=None, tile_server=None, max_zoom=19):
+    def __init__(self, path=None, tile_server=None, max_zoom=19, user_agent=None):
         if path is None:
             self.db_path = os.path.join(os.path.abspath(os.getcwd()), "offline_tiles.db")
         else:
@@ -29,6 +29,7 @@ class OfflineLoader:
         self.thread_pool = []
         self.lock = threading.Lock()
         self.number_of_threads = 50
+        self.user_agent = "TkinterMapView" if user_agent is None else user_agent
 
     def print_loaded_sections(self):
         # connect to database
@@ -68,7 +69,7 @@ class OfflineLoader:
 
                     try:
                         url = self.tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
-                        image_data = requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).content
+                        image_data = requests.get(url, stream=True, headers={"User-Agent": self.user_agent}).content
 
                         self.lock.acquire()
                         self.result_queue.append((zoom, x, y, self.tile_server, image_data))
