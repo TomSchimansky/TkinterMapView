@@ -23,6 +23,13 @@ https://user-images.githubusercontent.com/66446067/199613538-6be7bc5c-c88b-42d7-
 
 |`examples/map_with_customtkinter.py` on macOS
 
+You can also find more tutorials on the CustomTkinter documentation website:
+<div align="center">
+<h3>
+More Tutorials: https://customtkinter.tomschimansky.com/tutorial/tkintermapview
+</h3>
+</div>
+
 # Installation
 
 
