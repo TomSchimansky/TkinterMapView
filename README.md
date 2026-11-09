@@ -319,8 +319,9 @@ self.map_widget.set_user_agent("MyApp")
 
 ### Use offline tiles
 
-You can load tiles into a database to use them offline when there is no connection to
-the tile server. Check out [examples/load_offline_tiles.py](https://github.com/TomSchimansky/TkinterMapView/blob/main/examples/map_with_offline_tiles.py) for more information.
+You can load tiles into a database to use them offline when there is no connection to 
+the tile server. Check out [examples/load_offline_tiles.py](https://github.com/TomSchimansky/TkinterMapView/blob/main/examples/load_offline_tiles.py) for more information.
+
 
 If you then create the TkinterMapView widget you pass the database path as an argument.
 An example of this can be found here: [examples/map_with_offline_tiles.py](https://github.com/TomSchimansky/TkinterMapView/blob/main/examples/map_with_offline_tiles.py)
