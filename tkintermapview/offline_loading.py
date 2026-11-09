@@ -7,20 +7,24 @@ import sys
 import math
 from PIL import Image, UnidentifiedImageError
 
+from . import __version__
 from .utility_functions import decimal_to_osm, osm_to_decimal
 
 
 class OfflineLoader:
-    def __init__(self, path=None, tile_server=None, max_zoom=19):
+    def __init__(self, path=None, tile_server=None, max_zoom=19, user_agent=None):
         if path is None:
             self.db_path = os.path.join(os.path.abspath(os.getcwd()), "offline_tiles.db")
         else:
             self.db_path = path
 
         if tile_server is None:
-            self.tile_server = "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            self.tile_server = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         else:
             self.tile_server = tile_server
+
+        # OpenStreetMap does not allow downloading tiles for offline use, use a tile server that allows it
+        self.user_agent = user_agent if user_agent is not None else "TkinterMapView/" + __version__
 
         self.max_zoom = max_zoom
 
@@ -68,7 +72,7 @@ class OfflineLoader:
 
                     try:
                         url = self.tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
-                        image_data = requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).content
+                        image_data = requests.get(url, stream=True, headers={"User-Agent": self.user_agent}).content
 
                         self.lock.acquire()
                         self.result_queue.append((zoom, x, y, self.tile_server, image_data))

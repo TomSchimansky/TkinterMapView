@@ -62,7 +62,9 @@ import tkintermapview
 
 Create the standard tkinter window and place a TkinterMapView in the middle of the window.
 The first argument must be the widgets master, then you specify the `width`, `height` and `corner_radius`
-of the widget.
+of the widget. The `user_agent` should contain the name of your app, it is sent with every request to the
+tile server and to the address search. OpenStreetMap blocks requests that don't identify the app, see the
+[tile usage policy](https://operations.osmfoundation.org/policies/tiles/).
 ```python
 # create tkinter window
 root_tk = tkinter.Tk()
@@ -70,7 +72,7 @@ root_tk.geometry(f"{800}x{600}")
 root_tk.title("map_view_example.py")
 
 # create map widget
-map_widget = tkintermapview.TkinterMapView(root_tk, width=800, height=600, corner_radius=0)
+map_widget = tkintermapview.TkinterMapView(root_tk, width=800, height=600, corner_radius=0, user_agent="MyAppName/1.0")
 map_widget.place(relx=0.5, rely=0.5, anchor=tkinter.CENTER)
 ```
 If you also call `root_tk.mainloop()` at the end, this is already a fully working example to test the map widget.
@@ -293,25 +295,24 @@ For example, you can use the standard Google Maps map style or Google Maps
 satellite images:
 ````python
 # example tile sever:
-self.map_widget.set_tile_server("https://a.tile.openstreetmap.org/{z}/{x}/{y}.png")  # OpenStreetMap (default)
+self.map_widget.set_tile_server("https://tile.openstreetmap.org/{z}/{x}/{y}.png")  # OpenStreetMap (default)
 self.map_widget.set_tile_server("https://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}&s=Ga", max_zoom=22)  # google normal
 self.map_widget.set_tile_server("https://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}&s=Ga", max_zoom=22)  # google satellite
-self.map_widget.set_tile_server("http://c.tile.stamen.com/watercolor/{z}/{x}/{y}.png")  # painting style
-self.map_widget.set_tile_server("http://a.tile.stamen.com/toner/{z}/{x}/{y}.png")  # black and white
 self.map_widget.set_tile_server("https://tiles.wmflabs.org/hikebike/{z}/{x}/{y}.png")  # detailed hiking
 self.map_widget.set_tile_server("https://tiles.wmflabs.org/osm-no-labels/{z}/{x}/{y}.png")  # no labels
 self.map_widget.set_tile_server("https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{y}.jpeg")  # swisstopo map
 
 # example overlay tile server
-self.map_widget.set_overlay_tile_server("http://tiles.openseamap.org/seamark//{z}/{x}/{y}.png")  # sea-map overlay
-self.map_widget.set_overlay_tile_server("http://a.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png")  # railway infrastructure
+self.map_widget.set_overlay_tile_server("https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png")  # sea-map overlay
+self.map_widget.set_overlay_tile_server("https://tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png")  # railway infrastructure
 ````
 ---
 
 ### Use offline tiles
 
 You can load tiles into a database to use them offline when there is no connection to 
-the tile server. Check out [examples/load_offline_tiles.py](https://github.com/TomSchimansky/TkinterMapView/blob/main/examples/map_with_offline_tiles.py) for more information.
+the tile server. OpenStreetMap does not allow downloading tiles for offline use, so use a tile server
+that allows it. Check out [examples/load_offline_tiles.py](https://github.com/TomSchimansky/TkinterMapView/blob/main/examples/map_with_offline_tiles.py) for more information.
 
 If you then create the TkinterMapView widget you pass the database path as an argument.
 An example of this can be found here: [examples/map_with_offline_tiles.py](https://github.com/TomSchimansky/TkinterMapView/blob/main/examples/map_with_offline_tiles.py)

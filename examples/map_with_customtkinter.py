@@ -70,7 +70,7 @@ class App(customtkinter.CTk):
         self.frame_right.grid_columnconfigure(1, weight=0)
         self.frame_right.grid_columnconfigure(2, weight=1)
 
-        self.map_widget = TkinterMapView(self.frame_right, corner_radius=0)
+        self.map_widget = TkinterMapView(self.frame_right, corner_radius=0, user_agent="TkinterMapView Example")
         self.map_widget.grid(row=1, rowspan=1, column=0, columnspan=3, sticky="nswe", padx=(0, 0), pady=(0, 0))
 
         self.entry = customtkinter.CTkEntry(master=self.frame_right,
@@ -105,7 +105,7 @@ class App(customtkinter.CTk):
 
     def change_map(self, new_map: str):
         if new_map == "OpenStreetMap":
-            self.map_widget.set_tile_server("https://a.tile.openstreetmap.org/{z}/{x}/{y}.png")
+            self.map_widget.set_tile_server("https://tile.openstreetmap.org/{z}/{x}/{y}.png")
         elif new_map == "Google normal":
             self.map_widget.set_tile_server("https://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}&s=Ga", max_zoom=22)
         elif new_map == "Google satellite":

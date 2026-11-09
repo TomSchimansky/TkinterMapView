@@ -1,5 +1,6 @@
 import requests
 import math
+import warnings
 import threading
 import tkinter
 import tkinter.ttk as ttk
@@ -20,6 +21,7 @@ from functools import partial
 
 from .canvas_position_marker import CanvasPositionMarker
 from .canvas_tile import CanvasTile
+from . import __version__
 from .utility_functions import decimal_to_osm, osm_to_decimal
 from .canvas_button import CanvasButton
 from .canvas_path import CanvasPath
@@ -35,6 +37,7 @@ class TkinterMapView(tkinter.Frame):
                  database_path: str = None,
                  use_database_only: bool = False,
                  max_zoom: int = 19,
+                 user_agent: str = None,
                  **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -126,8 +129,17 @@ class TkinterMapView(tkinter.Frame):
         self.empty_tile_image = ImageTk.PhotoImage(Image.new("RGB", (self.tile_size, self.tile_size), (190, 190, 190)))  # used for zooming and moving
         self.not_loaded_tile_image = ImageTk.PhotoImage(Image.new("RGB", (self.tile_size, self.tile_size), (250, 250, 250)))  # only used when image not found on tile server
 
+        # User-Agent for all requests, OpenStreetMap blocks requests without a User-Agent that names the app:
+        # https://operations.osmfoundation.org/policies/tiles/
+        if user_agent is None:
+            warnings.warn("TkinterMapView: no user_agent given. OpenStreetMap blocks requests with the default "
+                          "User-Agent, pass user_agent='YourAppName/1.0' to TkinterMapView()")
+            self.user_agent = "TkinterMapView/" + __version__
+        else:
+            self.user_agent = user_agent
+
         # tile server and database
-        self.tile_server = "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        self.tile_server = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         self.database_path = database_path
         self.use_database_only = use_database_only
         self.overlay_tile_server: Union[str, None] = None
@@ -335,7 +347,7 @@ class TkinterMapView(tkinter.Frame):
             https://geocoder.readthedocs.io/providers/OpenStreetMap.html """
 
         ssl_ctx = ssl.create_default_context(cafile=certifi.where())
-        geolocator = Nominatim(user_agent="TkinterMapView/1.0 (contact@customtkinter.tomschimansky.com)", ssl_context=ssl_ctx)
+        geolocator = Nominatim(user_agent=self.user_agent, ssl_context=ssl_ctx)
 
         try:
             location = geolocator.geocode(address_string)
@@ -512,16 +524,16 @@ class TkinterMapView(tkinter.Frame):
         # try to get the tile from the server
         try:
             url = self.tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
-            image = Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).raw)
+            image = Image.open(requests.get(url, stream=True, headers={"User-Agent": self.user_agent}).raw)
 
             if self.overlay_tile_server is not None:
                 url = self.overlay_tile_server.replace("{x}", str(x)).replace("{y}", str(y)).replace("{z}", str(zoom))
-                image_overlay = Image.open(requests.get(url, stream=True, headers={"User-Agent": "TkinterMapView"}).raw)
+                image_overlay = Image.open(requests.get(url, stream=True, headers={"User-Agent": self.user_agent}).raw)
                 image = image.convert("RGBA")
                 image_overlay = image_overlay.convert("RGBA")
 
-                if image_overlay.size is not (self.tile_size, self.tile_size):
-                    image_overlay = image_overlay.resize((self.tile_size, self.tile_size), Image.ANTIALIAS)
+                if image_overlay.size != (self.tile_size, self.tile_size):
+                    image_overlay = image_overlay.resize((self.tile_size, self.tile_size), Image.LANCZOS)
 
                 image.paste(image_overlay, (0, 0), image_overlay)
 
